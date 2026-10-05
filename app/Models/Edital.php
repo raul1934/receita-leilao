@@ -98,11 +98,32 @@ class Edital extends Model
     #[Scope]
     protected function proximosPrimeiro(Builder $query): void
     {
+        self::ordenarProximosPrimeiro($query);
+    }
+
+    /**
+     * Também usado em consultas de lotes com join em editais, passando a
+     * coluna qualificada ("editais.data_abertura_lances").
+     */
+    public static function ordenarProximosPrimeiro(Builder $query, string $coluna = 'data_abertura_lances'): Builder
+    {
         $agora = now();
 
-        $query->orderByRaw('case when data_abertura_lances >= ? then 0 else 1 end', [$agora])
-            ->orderByRaw('case when data_abertura_lances >= ? then data_abertura_lances end', [$agora])
-            ->orderByDesc('data_abertura_lances');
+        return $query->orderByRaw("case when {$coluna} >= ? then 0 else 1 end", [$agora])
+            ->orderByRaw("case when {$coluna} >= ? then {$coluna} end", [$agora])
+            ->orderByDesc($coluna);
+    }
+
+    /**
+     * "abertos": sessão de lances ainda não encerrada; "fechados": encerrada.
+     * Qualquer outro valor não filtra.
+     */
+    #[Scope]
+    protected function comLances(Builder $query, ?string $estado): void
+    {
+        if (in_array($estado, ['abertos', 'fechados'], true)) {
+            $query->whereIn('situacao', SituacaoEdital::codigos(lancesEncerrados: $estado === 'fechados'));
+        }
     }
 
     protected function situacaoDescricao(): Attribute

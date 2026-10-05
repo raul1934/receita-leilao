@@ -25,6 +25,11 @@
         <h2 style="margin: 0">Editais importados</h2>
         <form method="GET" action="{{ route('editais.index') }}" class="linha">
             <input type="search" name="q" value="{{ $busca }}" placeholder="Buscar por edital, unidade ou cidade">
+            <select name="lances" aria-label="Situação dos lances">
+                <option value="">Lances abertos e fechados</option>
+                <option value="abertos" @selected($lances === 'abertos')>Abertos para lances</option>
+                <option value="fechados" @selected($lances === 'fechados')>Fechados para lances</option>
+            </select>
             <select name="ordem" aria-label="Ordenação">
                 <option value="">Próximos leilões primeiro</option>
                 <option value="abertura_asc" @selected($ordem === 'abertura_asc')>Abertura dos lances: mais antiga primeiro</option>

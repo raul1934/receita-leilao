@@ -13,6 +13,7 @@
             <div class="muted">{{ $lote->tipo }}</div>
         </div>
         <div class="acoes">
+            @include('partials.favorito')
             <a class="botao secundario" href="{{ $edital->ref()->urlPortal() }}/lote/{{ $lote->numero }}" target="_blank" rel="noopener">Ver no portal</a>
         </div>
     </div>

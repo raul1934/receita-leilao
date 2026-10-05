@@ -61,6 +61,31 @@ enum SituacaoEdital: int
         ], true);
     }
 
+    /**
+     * A sessão de lances já terminou (ou o edital foi cancelado/excluído).
+     * As demais situações ainda vão abrir ou estão com a sessão aberta;
+     * "Sessão Pública Suspensa" conta como aberta, pois pode ser retomada.
+     */
+    public function lancesEncerrados(): bool
+    {
+        return $this->finalizada() || in_array($this, [
+            self::FechadaSessaoParaLance,
+            self::FechadaSessaoParaLanceLotesAdjudicados,
+            self::EncerradaSessaoPublica,
+        ], true);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public static function codigos(bool $lancesEncerrados): array
+    {
+        return array_values(array_map(
+            fn (self $situacao) => $situacao->value,
+            array_filter(self::cases(), fn (self $situacao) => $situacao->lancesEncerrados() === $lancesEncerrados),
+        ));
+    }
+
     public static function descricao(?int $codigo): string
     {
         if ($codigo === null) {

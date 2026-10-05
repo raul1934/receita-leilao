@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'edital_id', 'numero', 'sequencial', 'tipo', 'situacao', 'valor_minimo', 'valor_avaliacao',
-    'resultado', 'valor_arremate', 'permite_pf', 'dados', 'detalhes_importados_em',
+    'resultado', 'valor_arremate', 'permite_pf', 'dados', 'detalhes_importados_em', 'favoritado_em',
 ])]
 class Lote extends Model
 {
@@ -46,6 +46,7 @@ class Lote extends Model
             'resultado' => ResultadoLote::class,
             'valor_arremate' => 'decimal:2',
             'arremate_suspeito' => 'boolean',
+            'favoritado_em' => 'datetime',
             'permite_pf' => 'boolean',
             'dados' => 'array',
             'detalhes_importados_em' => 'datetime',

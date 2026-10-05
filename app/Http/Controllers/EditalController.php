@@ -18,6 +18,7 @@ class EditalController extends Controller
     {
         $busca = $request->string('q')->trim()->value();
         $ordem = $request->string('ordem')->value();
+        $lances = $request->string('lances')->value();
 
         $editais = Edital::query()
             ->withCount('lotes')
@@ -25,6 +26,7 @@ class EditalController extends Controller
                 ->where('codigo', 'like', "%{$busca}%")
                 ->orWhere('unidade_nome', 'like', "%{$busca}%")
                 ->orWhere('cidade', 'like', "%{$busca}%")))
+            ->comLances($lances)
             ->when(
                 $ordem === 'abertura_asc' || $ordem === 'abertura_desc',
                 fn ($q) => $q->orderBy('data_abertura_lances', $ordem === 'abertura_asc' ? 'asc' : 'desc'),
@@ -34,7 +36,7 @@ class EditalController extends Controller
             ->paginate(25)
             ->withQueryString();
 
-        return view('editais.index', ['editais' => $editais, 'busca' => $busca, 'ordem' => $ordem]);
+        return view('editais.index', ['editais' => $editais, 'busca' => $busca, 'ordem' => $ordem, 'lances' => $lances]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -81,19 +83,15 @@ class EditalController extends Controller
             ->sortBy(fn (string $t) => Str::ascii($t))
             ->values();
 
-        $itensDoEdital = LoteItem::query()->whereIn('lote_id', $edital->lotes()->select('id'))->whereNotNull('recinto_armazenador');
-        $depositos = $itensDoEdital->clone()->distinct()->pluck('recinto_armazenador')->sortBy(fn (string $d) => Str::ascii($d))->values();
+        $depositos = LoteItem::query()
+            ->whereIn('lote_id', $edital->lotes()->select('id'))
+            ->whereNotNull('recinto_armazenador')
+            ->distinct()
+            ->pluck('recinto_armazenador')
+            ->sortBy(fn (string $d) => Str::ascii($d))
+            ->values();
 
-        // Depósitos de cada lote da página, o com mais itens primeiro (quase
-        // sempre há um só).
-        $depositosPorLote = $itensDoEdital->clone()
-            ->whereIn('lote_id', $lotes->pluck('id'))
-            ->select('lote_id', 'recinto_armazenador')
-            ->selectRaw('count(*) as itens')
-            ->groupBy('lote_id', 'recinto_armazenador')
-            ->get()
-            ->groupBy('lote_id')
-            ->map(fn ($grupo) => $grupo->sortByDesc('itens')->pluck('recinto_armazenador')->values());
+        $depositosPorLote = LoteItem::depositosPorLote($lotes->pluck('id'));
 
         $arremate = $edital->resultado_importado_em ? $edital->resumoArremate() : null;
 

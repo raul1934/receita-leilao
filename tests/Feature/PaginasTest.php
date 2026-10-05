@@ -58,6 +58,29 @@ class PaginasTest extends TestCase
         $this->get('/?ordem=abertura_desc')->assertSeeInOrder(['ED-DISTANTE', 'ED-PROXIMO', 'ED-PASSADO-RECENTE', 'ED-PASSADO-ANTIGO']);
     }
 
+    public function test_filtra_editais_com_lances_abertos_ou_fechados(): void
+    {
+        foreach ([
+            'ED-DISPONIBILIZADO' => 2,
+            'ED-SESSAO-ABERTA' => 7,
+            'ED-SUSPENSO' => 13,
+            'ED-SESSAO-FECHADA' => 8,
+            'ED-ATA-PUBLICADA' => 15,
+        ] as $codigo => $situacao) {
+            Edital::create(['unidade' => 700100, 'numero' => $situacao, 'exercicio' => 2026, 'codigo' => $codigo, 'situacao' => $situacao]);
+        }
+
+        $this->get('/?lances=abertos')
+            ->assertSee('ED-DISPONIBILIZADO')->assertSee('ED-SESSAO-ABERTA')->assertSee('ED-SUSPENSO')
+            ->assertDontSee('ED-SESSAO-FECHADA')->assertDontSee('ED-ATA-PUBLICADA');
+
+        $this->get('/?lances=fechados')
+            ->assertSee('ED-SESSAO-FECHADA')->assertSee('ED-ATA-PUBLICADA')
+            ->assertDontSee('ED-DISPONIBILIZADO')->assertDontSee('ED-SESSAO-ABERTA')->assertDontSee('ED-SUSPENSO');
+
+        $this->get('/')->assertSee('ED-DISPONIBILIZADO')->assertSee('ED-ATA-PUBLICADA');
+    }
+
     public function test_detalhe_do_edital_lista_os_lotes(): void
     {
         $edital = $this->editalImportado();

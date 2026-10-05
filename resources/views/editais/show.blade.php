@@ -85,6 +85,7 @@
         <table>
             <thead>
                 <tr>
+                    <th><span class="sr-only">Favorito</span></th>
                     <th></th>
                     <th>Lote</th>
                     <th>Tipo</th>
@@ -101,6 +102,7 @@
             <tbody>
                 @forelse ($lotes as $lote)
                     <tr>
+                        <td>@include('partials.favorito')</td>
                         <td>
                             @if ($capa = $lote->imagens->first())
                                 <a class="foto" href="{{ route('lotes.show', [$edital, $lote]) }}"
@@ -115,32 +117,17 @@
                         </td>
                         <td style="white-space: nowrap"><a href="{{ route('lotes.show', [$edital, $lote]) }}">Lote {{ $lote->numero }}</a></td>
                         <td>{{ $lote->tipo ?? '-' }}</td>
-                        <td>
-                            @php($depositosDoLote = $depositosPorLote->get($lote->id, collect()))
-                            {{ $depositosDoLote->first() ?? '-' }}
-                            @if ($depositosDoLote->count() > 1)
-                                <span class="badge" title="{{ $depositosDoLote->implode(', ') }}">+{{ $depositosDoLote->count() - 1 }}</span>
-                            @endif
-                        </td>
+                        <td>@include('partials.deposito', ['depositosDoLote' => $depositosPorLote->get($lote->id, collect())])</td>
                         <td><span class="badge">{{ $lote->situacao_descricao }}</span></td>
                         <td class="num">{{ Formato::moeda($lote->valor_minimo) }}</td>
                         <td class="num">{{ Formato::moeda($lote->valor_avaliacao) }}</td>
                         @if ($arremate)
-                            <td class="num">
-                                @if ($lote->arremate_suspeito)
-                                    <span class="muted">{{ Formato::moeda($lote->valor_arremate) }}</span>
-                                    <div><span class="badge alerta" title="Lance acima de {{ Formato::quantidade(config('sle.arremate_suspeito_multiplo')) }} vezes o valor mínimo/de avaliação; fora dos totais">suspeito</span></div>
-                                @elseif ($lote->valor_arremate !== null)
-                                    <strong>{{ Formato::moeda($lote->valor_arremate) }}</strong>
-                                @else
-                                    <span class="muted">{{ $lote->resultado?->label() ?? '-' }}</span>
-                                @endif
-                            </td>
+                            <td class="num">@include('partials.arremate')</td>
                         @endif
                         <td class="num">{{ $lote->detalhes_importados_em ? $lote->itens_count : '-' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="vazio">Nenhum lote encontrado.</td></tr>
+                    <tr><td colspan="10" class="vazio">Nenhum lote encontrado.</td></tr>
                 @endforelse
             </tbody>
         </table>

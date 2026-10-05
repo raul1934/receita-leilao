@@ -45,7 +45,9 @@ Em Linux, defina `HOST_UID` e `HOST_GID` no `.env` com o resultado de `id -u` e 
 
 Abra http://localhost:8080, cole a URL do edital (ou `700100/12/2026`) e clique em **Importar**. A importação vai para a fila e o container `queue` processa em segundo plano; atualize a página depois de alguns segundos. Editais grandes levam mais tempo, porque cada lote é uma requisição.
 
-A lista de editais mostra primeiro os leilões com abertura dos lances ainda por vir (o mais próximo no topo) e depois os que já começaram; também dá para ordenar só pela data, crescente ou decrescente.
+A lista de editais mostra primeiro os leilões com abertura dos lances ainda por vir (o mais próximo no topo) e depois os que já começaram; também dá para ordenar só pela data, crescente ou decrescente. O filtro de lances separa os editais **abertos para lances** (sessão ainda não encerrada, inclusive os que ainda vão abrir) dos **fechados** (sessão encerrada, homologados, cancelados), pela situação do edital.
+
+A estrela ☆ ao lado de cada lote (na lista do edital e na página do lote) marca o lote como favorito sem recarregar a página. A tela **Favoritos** (menu do topo) reúne os lotes marcados de todos os editais, com os leilões mais próximos primeiro e o mesmo filtro de lances. Reimportar um edital não desmarca os favoritos.
 
 A página **Mudanças recentes** (menu no topo) lista as mudanças de situação, valor mínimo e valor de avaliação detectadas nas importações, com o valor anterior, o novo e a variação, filtrando por período e tipo de mudança.
 

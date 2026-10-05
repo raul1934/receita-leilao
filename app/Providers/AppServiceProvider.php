@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Lote;
 use App\Services\Sle\SleClient;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,5 +26,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // As views não usam Tailwind; a paginação usa a marcação simples do Bootstrap 4.
         Paginator::useBootstrapFour();
+
+        View::composer('layouts.app', fn ($view) => $view->with('totalFavoritos', Lote::whereNotNull('favoritado_em')->count()));
     }
 }

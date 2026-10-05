@@ -72,6 +72,10 @@
         .menu { margin-left: auto; display: flex; gap: 16px; }
         .menu a.ativo { color: var(--text); font-weight: 600; }
         .mudou { font-weight: 700; }
+        form.favorito { display: inline; margin: 0; }
+        .estrela { background: none; border: 0; padding: 2px 4px; font-size: 22px; line-height: 1; color: var(--muted); cursor: pointer; }
+        .estrela:hover, .estrela.ativa { color: #d99a00; }
+        .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
         .badge.antes { text-decoration: line-through; color: var(--muted); }
         .badge.alerta { background: var(--err-bg); color: var(--err-text); }
         .aviso { background: var(--err-bg); color: var(--err-text); border-radius: 6px; padding: 6px 10px; margin-top: 6px; font-size: 14px; }
@@ -100,6 +104,7 @@
             <nav class="menu">
                 <a href="{{ route('editais.index') }}" @class(['ativo' => request()->routeIs('editais.*', 'lotes.*')])>Editais</a>
                 <a href="{{ route('mudancas.index') }}" @class(['ativo' => request()->routeIs('mudancas.*')])>Mudanças recentes</a>
+                <a href="{{ route('favoritos.index') }}" @class(['ativo' => request()->routeIs('favoritos.*')])>Favoritos (<span data-total-favoritos>{{ $totalFavoritos }}</span>)</a>
             </nav>
         </div>
     </header>
@@ -117,5 +122,6 @@
     </footer>
 
     @include('partials.galeria')
+    @include('partials.favorito-script')
 </body>
 </html>
