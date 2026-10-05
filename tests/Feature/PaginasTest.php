@@ -105,7 +105,36 @@ class PaginasTest extends TestCase
             ->assertDontSee('W69////')
             ->assertSee('1.500')
             ->assertSee('Porto Seco de Mesquita')
-            ->assertSee('foto_pq_700100_2026_12_1_546371', false);
+            ->assertSee('foto_pq_700100_2026_12_1_546371', false)
+            // O JSON precisa vir escapado, senão as aspas fecham o atributo HTML.
+            ->assertSee('data-galeria="[{&quot;url&quot;:&quot;https:', false)
+            ->assertSee('data-indice="0"', false)
+            ->assertSee('id="galeria"', false);
+    }
+
+    public function test_miniatura_na_lista_de_lotes_abre_a_galeria(): void
+    {
+        $edital = $this->editalImportado();
+
+        $this->get(route('editais.show', $edital))
+            ->assertOk()
+            ->assertSee('class="foto"', false)
+            // O JSON precisa vir escapado, senão as aspas fecham o atributo HTML.
+            ->assertSee('data-galeria="[{&quot;url&quot;:&quot;https:', false)
+            ->assertSee('data-titulo="Lote 1"', false);
+    }
+
+    public function test_detalhe_do_lote_mostra_o_historico_com_as_mudancas(): void
+    {
+        $edital = $this->editalImportado();
+        $lote = $edital->lotes()->first();
+        $lote->update(['situacao' => 12, 'valor_minimo' => 250000]);
+
+        $this->get(route('lotes.show', [$edital, $lote]))
+            ->assertOk()
+            ->assertSee('Histórico de situação e preço')
+            ->assertSeeInOrder(['Aberto para Proposta', 'R$ 250.000,00', 'Disponibilizado', 'R$ 306.100,00'])
+            ->assertSee('class="num mudou"', false);
     }
 
     public function test_lote_de_outro_edital_retorna_404(): void

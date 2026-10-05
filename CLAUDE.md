@@ -19,6 +19,8 @@ PHP and Composer are not installed on the host; everything runs in Docker. Do no
 - `app/Services/Sle/EditalRef.php`: parses portal URLs / `unidade/numero/ano` identifiers.
 - `app/Console/Commands`: `leilao:importar` and `leilao:sincronizar`.
 - `app/Jobs/ImportarEdital.php`: queued import used by the web form and `--fila`.
+- `app/Models/Lote.php`: `created`/`updated` events write a `LoteHistorico` snapshot when `situacao`, `valor_minimo` or `valor_avaliacao` change.
+- `resources/views/partials/galeria.blade.php`: vanilla JS lightbox for any `[data-galeria]` element (JSON list, HTML-escaped via `{{ json_encode() }}`; `@json` does not escape quotes in this Laravel version).
 - `routes/console.php`: daily `leilao:sincronizar --fila`, run by the `scheduler` container (`schedule:work`).
 - Domain names are in Portuguese, matching the portal's vocabulary.
 

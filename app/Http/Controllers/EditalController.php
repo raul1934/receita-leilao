@@ -58,7 +58,7 @@ class EditalController extends Controller
         $ordem = $request->string('ordem')->value();
 
         $lotes = $edital->lotes()
-            ->with('primeiraImagem')
+            ->with(['imagens' => fn ($q) => $q->orderBy('id')])
             ->withCount('itens')
             // Um lote pode ter várias categorias: "ELETRÔNICO/ÁUDIO/VÍDEO, INFORMÁTICA".
             ->when($tipo, fn ($q) => $q->where('tipo', 'like', "%{$tipo}%"))

@@ -44,7 +44,7 @@ Abra http://localhost:8080, cole a URL do edital (ou `700100/12/2026`) e clique 
 
 A lista de editais mostra primeiro os leilões com abertura dos lances ainda por vir (o mais próximo no topo) e depois os que já começaram; também dá para ordenar só pela data, crescente ou decrescente.
 
-A página de cada edital lista os lotes, com filtros por tipo, busca na descrição dos itens e ordenação por valor. A página do lote mostra itens e fotos.
+A página de cada edital lista os lotes, com filtros por tipo, busca na descrição dos itens e ordenação por valor. A página do lote mostra itens, fotos e o histórico de situação e preço. Clicar em uma foto (na página do lote ou na miniatura da lista) abre a galeria em tela cheia: setas ou ← → do teclado para navegar, deslizar no celular, Esc para fechar.
 
 ### Pelo terminal
 
@@ -91,6 +91,13 @@ Reimportar um edital é seguro: os registros são atualizados, sem duplicar.
 | `lotes`        | Número, tipo, situação, valor mínimo e valor de avaliação (em reais)                      |
 | `lote_itens`   | Descrição, quantidade, unidade de medida, recinto armazenador                             |
 | `lote_imagens` | URLs da foto e da miniatura (as imagens ficam no servidor da Receita, não são baixadas)   |
+| `lote_historicos` | Situação, valor mínimo e valor de avaliação do lote a cada mudança, com a data (`registrado_em`) |
+
+Um registro em `lote_historicos` é criado quando o lote aparece pela primeira vez e sempre que uma importação encontra situação ou valores diferentes; reimportar sem mudanças não gera registro. Por exemplo, para ver os lotes que mudaram de situação:
+
+```sql
+select lote_id, count(*) as registros from lote_historicos group by lote_id having count(*) > 1;
+```
 
 `editais.dados` e `lotes.dados` guardam o JSON original da API, para campos que ainda não têm coluna própria.
 

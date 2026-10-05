@@ -76,9 +76,15 @@
                 @forelse ($lotes as $lote)
                     <tr>
                         <td>
-                            @if ($lote->primeiraImagem)
-                                <img class="thumb" loading="lazy" referrerpolicy="no-referrer" alt="Foto do lote {{ $lote->numero }}"
-                                     src="{{ $lote->primeiraImagem->url_miniatura ?? $lote->primeiraImagem->url }}">
+                            @if ($capa = $lote->imagens->first())
+                                <a class="foto" href="{{ route('lotes.show', [$edital, $lote]) }}"
+                                   data-galeria="{{ json_encode($lote->fotosParaGaleria()) }}" data-titulo="Lote {{ $lote->numero }}">
+                                    <img class="thumb" loading="lazy" referrerpolicy="no-referrer" alt="Fotos do lote {{ $lote->numero }}"
+                                         src="{{ $capa->url_miniatura ?? $capa->url }}">
+                                    @if ($lote->imagens->count() > 1)
+                                        <span class="qtd">{{ $lote->imagens->count() }}</span>
+                                    @endif
+                                </a>
                             @endif
                         </td>
                         <td style="white-space: nowrap"><a href="{{ route('lotes.show', [$edital, $lote]) }}">Lote {{ $lote->numero }}</a></td>

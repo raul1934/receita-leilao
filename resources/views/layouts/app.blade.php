@@ -66,6 +66,25 @@
         .page-item.active .page-link { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
         .page-item.disabled .page-link { color: var(--muted); }
         footer { color: var(--muted); font-size: 13px; padding: 32px 0; }
+        .foto { display: inline-block; position: relative; }
+        .foto .qtd { position: absolute; right: 3px; bottom: 3px; background: rgba(0,0,0,.65); color: #fff; font-size: 11px; border-radius: 4px; padding: 0 4px; }
+        .galeria a { cursor: zoom-in; }
+        .mudou { font-weight: 700; }
+        .badge.mudou { background: var(--accent); color: var(--accent-text); }
+        .lightbox { position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 0, .92); display: flex; align-items: center; justify-content: center; }
+        .lightbox[hidden], .lightbox button[hidden] { display: none; }
+        .lightbox img { max-width: calc(100vw - 32px); max-height: calc(100vh - 120px); object-fit: contain; border-radius: 4px; user-select: none; }
+        .lightbox button {
+            position: absolute; display: flex; align-items: center; justify-content: center; padding: 0;
+            width: 48px; height: 48px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .14);
+            color: #fff; font-size: 30px; line-height: 1; cursor: pointer;
+        }
+        .lightbox button:hover, .lightbox button:focus-visible { background: rgba(255, 255, 255, .28); outline: none; }
+        .lightbox .fechar { top: 16px; right: 16px; }
+        .lightbox .anterior { left: 16px; top: 50%; transform: translateY(-50%); }
+        .lightbox .proxima { right: 16px; top: 50%; transform: translateY(-50%); }
+        .lightbox .legenda { position: absolute; left: 16px; right: 16px; bottom: 16px; text-align: center; color: #ddd; font-size: 14px; }
+        .lightbox .legenda a { color: #fff; text-decoration: underline; margin-left: 12px; }
     </style>
 </head>
 <body>
@@ -87,5 +106,7 @@
     <footer class="container">
         Dados obtidos do portal público do <a href="{{ config('sle.base_url') }}/portal" target="_blank" rel="noopener">Sistema de Leilão Eletrônico</a>.
     </footer>
+
+    @include('partials.galeria')
 </body>
 </html>

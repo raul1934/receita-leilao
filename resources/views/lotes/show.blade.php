@@ -29,9 +29,9 @@
 
     @if ($lote->imagens->isNotEmpty())
         <h2>Fotos ({{ $lote->imagens->count() }})</h2>
-        <div class="galeria">
-            @foreach ($lote->imagens as $imagem)
-                <a href="{{ $imagem->url }}" target="_blank" rel="noopener">
+        <div class="galeria" data-galeria="{{ json_encode($lote->fotosParaGaleria()) }}" data-titulo="Lote {{ $lote->numero }}">
+            @foreach ($lote->imagens as $indice => $imagem)
+                <a href="{{ $imagem->url }}" target="_blank" rel="noopener" data-indice="{{ $indice }}">
                     <img loading="lazy" referrerpolicy="no-referrer" alt="Foto do lote {{ $lote->numero }}"
                          src="{{ $imagem->url_miniatura ?? $imagem->url }}">
                 </a>
@@ -72,6 +72,34 @@
                             @endif
                         </td>
                     </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Histórico de situação e preço</h2>
+    <p class="muted">Um registro por mudança detectada nas importações. Em destaque, o que mudou em relação ao registro anterior.</p>
+    <div class="tabela">
+        <table>
+            <thead>
+                <tr>
+                    <th>Desde</th>
+                    <th>Situação</th>
+                    <th class="num">Valor mínimo</th>
+                    <th class="num">Valor de avaliação</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($lote->historico as $indice => $registro)
+                    @php($anterior = $lote->historico[$indice + 1] ?? null)
+                    <tr>
+                        <td>{{ Formato::dataHora($registro->registrado_em) }}</td>
+                        <td><span @class(['badge', 'mudou' => $anterior && $anterior->situacao !== $registro->situacao])>{{ $registro->situacao_descricao }}</span></td>
+                        <td @class(['num', 'mudou' => $anterior && $anterior->valor_minimo !== $registro->valor_minimo])>{{ Formato::moeda($registro->valor_minimo) }}</td>
+                        <td @class(['num', 'mudou' => $anterior && $anterior->valor_avaliacao !== $registro->valor_avaliacao])>{{ Formato::moeda($registro->valor_avaliacao) }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4" class="vazio">Sem histórico registrado.</td></tr>
                 @endforelse
             </tbody>
         </table>

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Edital;
 use App\Models\Lote;
+use App\Models\LoteHistorico;
 use App\Models\LoteImagem;
 use App\Models\LoteItem;
 use App\Services\Sle\EditalImporter;
@@ -91,6 +92,47 @@ class EditalImporterTest extends TestCase
         $this->assertSame(1, LoteImagem::count());
         $this->assertSame(3, Edital::sole()->situacao);
         $this->assertSame('250000.00', Lote::sole()->valor_minimo);
+    }
+
+    public function test_registra_historico_quando_situacao_ou_valor_mudam(): void
+    {
+        $edital = $this->fixture('edital_700100_12_2026');
+        $lote = $this->fixture('lote_700100_12_2026_1');
+        $editalAlterado = $edital;
+        $editalAlterado['listaLotes'][0]['situacaoLote'] = 12;
+        $editalAlterado['listaLotes'][0]['valorMinimo'] = 250000;
+        $loteAlterado = $lote;
+        $loteAlterado['situacaoLote'] = 12;
+        $loteAlterado['valorMinimo'] = 250000;
+
+        $this->fakeSle([
+            '*/api/edital/700100/12/2026' => Http::sequence()->push($edital)->push($edital)->push($editalAlterado),
+            '*/api/lote/700100/12/2026/1' => Http::sequence()->push($lote)->push($lote)->push($loteAlterado),
+        ]);
+
+        $this->importar();
+        $this->importar();
+        $this->assertSame(1, LoteHistorico::count(), 'Reimportar sem mudanças não deve criar registro.');
+
+        $this->importar();
+
+        $historico = LoteHistorico::orderBy('id')->get();
+        $this->assertCount(2, $historico);
+        $this->assertSame([11, '306100.00', '1307215.00'], [$historico[0]->situacao, $historico[0]->valor_minimo, $historico[0]->valor_avaliacao]);
+        $this->assertSame([12, '250000.00', '1307215.00'], [$historico[1]->situacao, $historico[1]->valor_minimo, $historico[1]->valor_avaliacao]);
+        $this->assertNotNull($historico[1]->registrado_em);
+    }
+
+    public function test_cria_historico_para_lote_gravado_antes_do_historico(): void
+    {
+        $this->fakeSle();
+        $this->importar();
+        LoteHistorico::query()->delete();
+
+        $this->importar();
+
+        $this->assertSame(1, LoteHistorico::count());
+        $this->assertSame('306100.00', LoteHistorico::sole()->valor_minimo);
     }
 
     public function test_sem_detalhes_importa_apenas_a_lista_de_lotes(): void

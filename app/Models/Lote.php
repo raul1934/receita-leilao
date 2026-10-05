@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'edital_id', 'numero', 'sequencial', 'tipo', 'situacao', 'valor_minimo', 'valor_avaliacao',
@@ -16,6 +15,23 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class Lote extends Model
 {
+    /**
+     * Campos cujas mudanças ficam registradas em lote_historicos.
+     */
+    public const CAMPOS_HISTORICO = ['situacao', 'valor_minimo', 'valor_avaliacao'];
+
+    protected static function booted(): void
+    {
+        static::created(fn (Lote $lote) => $lote->registrarHistorico());
+
+        static::updated(function (Lote $lote) {
+            // doesntExist() cobre lotes gravados antes de o histórico existir.
+            if ($lote->wasChanged(self::CAMPOS_HISTORICO) || $lote->historico()->doesntExist()) {
+                $lote->registrarHistorico();
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
@@ -52,11 +68,29 @@ class Lote extends Model
     }
 
     /**
-     * @return HasOne<LoteImagem, $this>
+     * @return HasMany<LoteHistorico, $this>
      */
-    public function primeiraImagem(): HasOne
+    public function historico(): HasMany
     {
-        return $this->hasOne(LoteImagem::class)->oldestOfMany();
+        return $this->hasMany(LoteHistorico::class);
+    }
+
+    /**
+     * Lista usada pela galeria de fotos das views (data-galeria).
+     *
+     * @return list<array{url: string, miniatura: string|null}>
+     */
+    public function fotosParaGaleria(): array
+    {
+        return $this->imagens
+            ->map(fn (LoteImagem $imagem) => ['url' => $imagem->url, 'miniatura' => $imagem->url_miniatura])
+            ->values()
+            ->all();
+    }
+
+    private function registrarHistorico(): void
+    {
+        $this->historico()->create($this->only(self::CAMPOS_HISTORICO));
     }
 
     protected function situacaoDescricao(): Attribute

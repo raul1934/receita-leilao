@@ -13,6 +13,7 @@ class LoteController extends Controller
         $lote->load([
             'itens' => fn ($q) => $q->orderBy('ordem'),
             'imagens' => fn ($q) => $q->orderBy('id'),
+            'historico' => fn ($q) => $q->orderByDesc('registrado_em')->orderByDesc('id'),
         ]);
 
         return view('lotes.show', compact('edital', 'lote'));
