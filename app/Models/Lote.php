@@ -23,6 +23,11 @@ class Lote extends Model
 
     protected static function booted(): void
     {
+        // Sem "fn": um listener de saving que devolve false cancela o save.
+        static::saving(function (Lote $lote) {
+            $lote->arremate_suspeito = self::arremateSuspeito($lote->valor_arremate, $lote->valor_minimo, $lote->valor_avaliacao);
+        });
+
         static::created(fn (Lote $lote) => $lote->registrarHistorico());
 
         static::updated(function (Lote $lote) {
@@ -40,6 +45,7 @@ class Lote extends Model
             'valor_avaliacao' => 'decimal:2',
             'resultado' => ResultadoLote::class,
             'valor_arremate' => 'decimal:2',
+            'arremate_suspeito' => 'boolean',
             'permite_pf' => 'boolean',
             'dados' => 'array',
             'detalhes_importados_em' => 'datetime',
@@ -79,6 +85,23 @@ class Lote extends Model
     }
 
     /**
+     * Quantas vezes o arremate supera o maior valor de referência do lote
+     * (mínimo ou avaliação). O mínimo sozinho não serve: às vezes é simbólico,
+     * como R$ 10 num lote avaliado em R$ 5.000.
+     */
+    public static function multiploArremate(int|float|string|null $arremate, int|float|string|null $minimo, int|float|string|null $avaliacao): ?float
+    {
+        $referencia = max((float) $minimo, (float) $avaliacao);
+
+        return $arremate === null || $referencia <= 0 ? null : (float) $arremate / $referencia;
+    }
+
+    public static function arremateSuspeito(int|float|string|null $arremate, int|float|string|null $minimo, int|float|string|null $avaliacao): bool
+    {
+        return (self::multiploArremate($arremate, $minimo, $avaliacao) ?? 0) > config('sle.arremate_suspeito_multiplo');
+    }
+
+    /**
      * Lista usada pela galeria de fotos das views (data-galeria).
      *
      * @return list<array{url: string, miniatura: string|null}>
@@ -94,6 +117,11 @@ class Lote extends Model
     private function registrarHistorico(): void
     {
         $this->historico()->create($this->only(self::CAMPOS_HISTORICO));
+    }
+
+    protected function multiploDoArremate(): Attribute
+    {
+        return Attribute::get(fn () => self::multiploArremate($this->valor_arremate, $this->valor_minimo, $this->valor_avaliacao));
     }
 
     protected function situacaoDescricao(): Attribute

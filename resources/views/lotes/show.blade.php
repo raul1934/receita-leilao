@@ -26,7 +26,13 @@
                 <div>
                     <dt>Resultado do leilão</dt>
                     <dd>
-                        @if ($lote->valor_arremate !== null)
+                        @if ($lote->arremate_suspeito)
+                            Arrematado por {{ Formato::moeda($lote->valor_arremate) }}
+                            <div class="aviso">
+                                Lance suspeito: {{ number_format($lote->multiplo_do_arremate, 0, ',', '.') }} vezes o maior valor de referência
+                                (mínimo ou avaliação). Não entra nos totais.
+                            </div>
+                        @elseif ($lote->valor_arremate !== null)
                             <strong>Arrematado por {{ Formato::moeda($lote->valor_arremate) }}</strong>
                             @if ($agio = Formato::variacao($lote->valor_minimo, $lote->valor_arremate))
                                 <div class="muted">{{ $agio }} sobre o valor mínimo</div>

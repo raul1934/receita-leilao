@@ -25,6 +25,11 @@ return [
 
     'user_agent' => env('SLE_USER_AGENT', 'Mozilla/5.0 (compatible; receita-leilao/1.0)'),
 
+    // Arremate acima deste múltiplo do maior valor de referência do lote (mínimo
+    // ou avaliação) é marcado como suspeito e não entra nos totais. O extrato
+    // do leilão traz lances absurdos (ex: R$ 170 milhões num veículo de R$ 80 mil).
+    'arremate_suspeito_multiplo' => (float) env('SLE_ARREMATE_SUSPEITO_MULTIPLO', 20),
+
     // Horário diário (fuso da aplicação) em que o scheduler roda leilao:sincronizar.
     'sincronizacao_horario' => env('SLE_SINCRONIZACAO_HORARIO', '06:00'),
 

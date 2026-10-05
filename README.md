@@ -49,7 +49,7 @@ A lista de editais mostra primeiro os leilões com abertura dos lances ainda por
 
 A página **Mudanças recentes** (menu no topo) lista as mudanças de situação, valor mínimo e valor de avaliação detectadas nas importações, com o valor anterior, o novo e a variação, filtrando por período e tipo de mudança.
 
-A página de cada edital lista os lotes, com filtros por tipo, busca na descrição dos itens e ordenação por valor. A página do lote mostra itens, fotos e o histórico de situação e preço. Clicar em uma foto (na página do lote ou na miniatura da lista) abre a galeria em tela cheia: setas ou ← → do teclado para navegar, deslizar no celular, Esc para fechar.
+A página de cada edital lista os lotes com o depósito (recinto armazenador) de cada um, com filtros por tipo e por depósito, busca na descrição dos itens e ordenação por valor. A página do lote mostra itens, fotos e o histórico de situação e preço. Clicar em uma foto (na página do lote ou na miniatura da lista) abre a galeria em tela cheia: setas ou ← → do teclado para navegar, deslizar no celular, Esc para fechar.
 
 ### Pelo terminal
 
@@ -88,6 +88,14 @@ docker compose exec app php artisan leilao:resultados
 
 # Editais específicos
 docker compose exec app php artisan leilao:resultados 600100/3/2026
+```
+
+### Lances suspeitos
+
+O extrato às vezes traz lances absurdos, como R$ 170 milhões num veículo de R$ 80 mil. Um arremate acima de 20 vezes o maior valor de referência do lote (mínimo ou avaliação) é marcado como suspeito: aparece com um aviso e não entra nos totais. O mínimo sozinho não serve de referência porque às vezes é simbólico (R$ 10 num lote avaliado em R$ 5.000). Para mudar o limite, ajuste `SLE_ARREMATE_SUSPEITO_MULTIPLO` no `.env` e reaplique a regra sem baixar nada:
+
+```bash
+docker compose exec app php artisan leilao:resultados --recalcular
 ```
 
 ### Sincronização automática
@@ -137,5 +145,6 @@ Os testes usam SQLite em memória e respostas reais da API salvas em [tests/Fixt
 | `SLE_RETRIES`    | `2`                                                      | Novas tentativas em falha de conexão ou HTTP 5xx |
 | `SLE_TIMEOUT`    | `30`                                                     | Timeout de cada requisição, em segundos         |
 | `SLE_SINCRONIZACAO_HORARIO` | `06:00`                                       | Horário da sincronização diária                 |
+| `SLE_ARREMATE_SUSPEITO_MULTIPLO` | `20`                                     | Arremate acima deste múltiplo do mínimo/avaliação é suspeito |
 
 Depois de alterar o código, reinicie o worker e o agendador para eles carregarem a versão nova: `docker compose restart queue scheduler`. Se houver uma importação em andamento, espere ela terminar: reiniciar o worker interrompe o edital atual.

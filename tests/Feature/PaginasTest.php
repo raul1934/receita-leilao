@@ -95,6 +95,34 @@ class PaginasTest extends TestCase
             ->assertDontSee('Lote 2');
     }
 
+    public function test_lista_e_filtra_os_lotes_pelo_deposito(): void
+    {
+        $edital = Edital::create(['unidade' => 800100, 'numero' => 12, 'exercicio' => 2026]);
+        $ipiranga = $edital->lotes()->create(['numero' => 1, 'detalhes_importados_em' => now()]);
+        $ipiranga->itens()->createMany([
+            ['ordem' => 1, 'descricao' => 'CELULAR', 'recinto_armazenador' => 'DMA IPIRANGA'],
+            ['ordem' => 2, 'descricao' => 'CAPA', 'recinto_armazenador' => 'DMA IPIRANGA'],
+            ['ordem' => 3, 'descricao' => 'CARREGADOR', 'recinto_armazenador' => 'DMA/TAUBATÉ'],
+        ]);
+        $taubate = $edital->lotes()->create(['numero' => 2, 'detalhes_importados_em' => now()]);
+        $taubate->itens()->create(['ordem' => 1, 'descricao' => 'BICICLETA', 'recinto_armazenador' => 'DMA/TAUBATÉ']);
+
+        $this->get(route('editais.show', $edital))
+            ->assertSee('Todos os depósitos')
+            ->assertSee('<option value="DMA IPIRANGA"', false)
+            ->assertSee('<option value="DMA/TAUBATÉ"', false)
+            // Lote 1: depósito com mais itens primeiro e indicação do outro.
+            ->assertSeeInOrder(['Lote 1', 'DMA IPIRANGA', '+1', 'Lote 2', 'DMA/TAUBATÉ']);
+
+        $this->get(route('editais.show', [$edital, 'deposito' => 'DMA IPIRANGA']))
+            ->assertSee('Lote 1')
+            ->assertDontSee('Lote 2');
+
+        $this->get(route('editais.show', [$edital, 'deposito' => 'DMA/TAUBATÉ']))
+            ->assertSee('Lote 1')
+            ->assertSee('Lote 2');
+    }
+
     public function test_detalhe_do_lote_mostra_itens_e_fotos(): void
     {
         $edital = $this->editalImportado();

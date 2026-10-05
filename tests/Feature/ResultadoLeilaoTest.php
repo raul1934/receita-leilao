@@ -137,6 +137,30 @@ class ResultadoLeilaoTest extends TestCase
             ->assertSee('+30,7% sobre o valor mínimo');
     }
 
+    public function test_lance_suspeito_e_marcado_e_fica_fora_do_total(): void
+    {
+        // Lote com mínimo de R$ 306.100 e avaliação de R$ 1.307.215.
+        $this->fakeSleEncerrado(Http::response($this->extrato(
+            '1      11.111.111/0001-11   EMPRESA ALFA LTDA          170.100.000,00',
+        )));
+        $edital = $this->importar()->edital;
+        $lote = $edital->lotes()->sole();
+
+        $this->assertTrue($lote->arremate_suspeito);
+        $this->assertSame('170100000.00', $lote->valor_arremate);
+
+        $this->get(route('editais.show', $edital))
+            ->assertSee('R$ 0,00')
+            ->assertSee('(0 de 1 lotes)')
+            ->assertSee('1 lance(s) suspeito(s) fora do total')
+            ->assertSee('badge alerta', false);
+
+        $this->get(route('lotes.show', [$edital, $lote]))
+            ->assertSee('Arrematado por R$ 170.100.000,00')
+            ->assertSee('Lance suspeito: 130 vezes o maior valor de referência')
+            ->assertDontSee('sobre o valor mínimo');
+    }
+
     public function test_edital_sem_resultado_nao_mostra_a_coluna(): void
     {
         $this->fakeSle();

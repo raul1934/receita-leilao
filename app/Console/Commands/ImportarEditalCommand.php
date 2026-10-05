@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\ResultadoLote;
 use App\Jobs\ImportarEdital;
 use App\Models\Lote;
 use App\Services\Sle\EditalImporter;
@@ -90,8 +89,12 @@ class ImportarEditalCommand extends Command
         ]]);
 
         if ($edital->resultado_importado_em) {
-            $arrematados = $edital->lotes()->where('resultado', ResultadoLote::Arrematado)->count();
-            $this->info("Resultado: {$arrematados} lote(s) arrematado(s), total ".Formato::moeda($edital->lotes()->sum('valor_arremate')).'.');
+            $resumo = $edital->resumoArremate();
+            $this->info("Resultado: {$resumo['lotes']} lote(s) arrematado(s), total ".Formato::moeda($resumo['total']).'.');
+
+            if ($resumo['suspeitos']) {
+                $this->warn("{$resumo['suspeitos']} lance(s) suspeito(s) fora do total.");
+            }
         }
 
         foreach ($resultado->falhas as $numero => $mensagem) {

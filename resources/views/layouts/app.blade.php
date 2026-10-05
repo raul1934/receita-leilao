@@ -73,6 +73,8 @@
         .menu a.ativo { color: var(--text); font-weight: 600; }
         .mudou { font-weight: 700; }
         .badge.antes { text-decoration: line-through; color: var(--muted); }
+        .badge.alerta { background: var(--err-bg); color: var(--err-text); }
+        .aviso { background: var(--err-bg); color: var(--err-text); border-radius: 6px; padding: 6px 10px; margin-top: 6px; font-size: 14px; }
         .badge.mudou { background: var(--accent); color: var(--accent-text); }
         .lightbox { position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 0, .92); display: flex; align-items: center; justify-content: center; }
         .lightbox[hidden], .lightbox button[hidden] { display: none; }

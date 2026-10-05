@@ -34,7 +34,12 @@
             @if ($arremate)
                 <div>
                     <dt>Total arrematado</dt>
-                    <dd>{{ Formato::moeda($arremate['total']) }} <span class="muted">({{ $arremate['lotes'] }} de {{ $lotes->total() }} lotes)</span></dd>
+                    <dd>
+                        {{ Formato::moeda($arremate['total']) }} <span class="muted">({{ $arremate['lotes'] }} de {{ $arremate['de'] }} lotes)</span>
+                        @if ($arremate['suspeitos'])
+                            <div class="muted">{{ $arremate['suspeitos'] }} lance(s) suspeito(s) fora do total</div>
+                        @endif
+                    </dd>
                 </div>
             @endif
         </dl>
@@ -55,6 +60,14 @@
                     <option value="{{ $opcao }}" @selected($opcao === $tipo)>{{ $opcao }}</option>
                 @endforeach
             </select>
+            @if ($depositos->isNotEmpty())
+                <select name="deposito" aria-label="Depósito">
+                    <option value="">Todos os depósitos</option>
+                    @foreach ($depositos as $opcao)
+                        <option value="{{ $opcao }}" @selected($opcao === $deposito)>{{ $opcao }}</option>
+                    @endforeach
+                </select>
+            @endif
             <input type="search" name="q" value="{{ $busca }}" placeholder="Buscar nos itens">
             <select name="ordem" aria-label="Ordenação">
                 <option value="">Nº do lote</option>
@@ -75,6 +88,7 @@
                     <th></th>
                     <th>Lote</th>
                     <th>Tipo</th>
+                    <th>Depósito</th>
                     <th>Situação</th>
                     <th class="num">Valor mínimo</th>
                     <th class="num">Valor de avaliação</th>
@@ -101,12 +115,22 @@
                         </td>
                         <td style="white-space: nowrap"><a href="{{ route('lotes.show', [$edital, $lote]) }}">Lote {{ $lote->numero }}</a></td>
                         <td>{{ $lote->tipo ?? '-' }}</td>
+                        <td>
+                            @php($depositosDoLote = $depositosPorLote->get($lote->id, collect()))
+                            {{ $depositosDoLote->first() ?? '-' }}
+                            @if ($depositosDoLote->count() > 1)
+                                <span class="badge" title="{{ $depositosDoLote->implode(', ') }}">+{{ $depositosDoLote->count() - 1 }}</span>
+                            @endif
+                        </td>
                         <td><span class="badge">{{ $lote->situacao_descricao }}</span></td>
                         <td class="num">{{ Formato::moeda($lote->valor_minimo) }}</td>
                         <td class="num">{{ Formato::moeda($lote->valor_avaliacao) }}</td>
                         @if ($arremate)
                             <td class="num">
-                                @if ($lote->valor_arremate !== null)
+                                @if ($lote->arremate_suspeito)
+                                    <span class="muted">{{ Formato::moeda($lote->valor_arremate) }}</span>
+                                    <div><span class="badge alerta" title="Lance acima de {{ Formato::quantidade(config('sle.arremate_suspeito_multiplo')) }} vezes o valor mínimo/de avaliação; fora dos totais">suspeito</span></div>
+                                @elseif ($lote->valor_arremate !== null)
                                     <strong>{{ Formato::moeda($lote->valor_arremate) }}</strong>
                                 @else
                                     <span class="muted">{{ $lote->resultado?->label() ?? '-' }}</span>
@@ -116,7 +140,7 @@
                         <td class="num">{{ $lote->detalhes_importados_em ? $lote->itens_count : '-' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" class="vazio">Nenhum lote encontrado.</td></tr>
+                    <tr><td colspan="9" class="vazio">Nenhum lote encontrado.</td></tr>
                 @endforelse
             </tbody>
         </table>

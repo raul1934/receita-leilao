@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ResultadoLote;
 use App\Enums\SituacaoEdital;
 use App\Services\Sle\EditalRef;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -66,6 +67,23 @@ class Edital extends Model
     public function temExtrato(): bool
     {
         return in_array('extrato-leilao', $this->dados['permissoes'] ?? [], true);
+    }
+
+    /**
+     * Totais do resultado do leilão, sem os arremates suspeitos.
+     *
+     * @return array{lotes: int, de: int, total: float|int|string, suspeitos: int}
+     */
+    public function resumoArremate(): array
+    {
+        $validos = fn () => $this->lotes()->where('resultado', ResultadoLote::Arrematado)->where('arremate_suspeito', false);
+
+        return [
+            'lotes' => $validos()->count(),
+            'de' => $this->lotes()->count(),
+            'total' => $validos()->sum('valor_arremate'),
+            'suspeitos' => $this->lotes()->where('arremate_suspeito', true)->count(),
+        ];
     }
 
     public function ref(): EditalRef

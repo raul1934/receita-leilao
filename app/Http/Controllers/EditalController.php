@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ResultadoLote;
 use App\Jobs\ImportarEdital;
 use App\Models\Edital;
+use App\Models\LoteItem;
 use App\Services\Sle\EditalRef;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,6 +55,7 @@ class EditalController extends Controller
     public function show(Request $request, Edital $edital): View
     {
         $tipo = $request->string('tipo')->value();
+        $deposito = $request->string('deposito')->value();
         $busca = $request->string('q')->trim()->value();
         $ordem = $request->string('ordem')->value();
 
@@ -63,10 +64,12 @@ class EditalController extends Controller
             ->withCount('itens')
             // Um lote pode ter várias categorias: "ELETRÔNICO/ÁUDIO/VÍDEO, INFORMÁTICA".
             ->when($tipo, fn ($q) => $q->where('tipo', 'like', "%{$tipo}%"))
+            ->when($deposito, fn ($q) => $q->whereHas('itens', fn ($itens) => $itens->where('recinto_armazenador', $deposito)))
             ->when($busca, fn ($q) => $q->whereHas('itens', fn ($itens) => $itens->where('descricao', 'like', "%{$busca}%")))
             ->when($ordem === 'menor_valor', fn ($q) => $q->orderBy('valor_minimo'))
             ->when($ordem === 'maior_valor', fn ($q) => $q->orderByDesc('valor_minimo'))
-            ->when($ordem === 'maior_arremate', fn ($q) => $q->orderByDesc('valor_arremate'))
+            // Arremates suspeitos vão para o fim, senão dominam a ordenação.
+            ->when($ordem === 'maior_arremate', fn ($q) => $q->orderBy('arremate_suspeito')->orderByDesc('valor_arremate'))
             ->orderBy('numero')
             ->paginate(50)
             ->withQueryString();
@@ -78,11 +81,24 @@ class EditalController extends Controller
             ->sortBy(fn (string $t) => Str::ascii($t))
             ->values();
 
-        $arremate = $edital->resultado_importado_em ? [
-            'lotes' => $edital->lotes()->where('resultado', ResultadoLote::Arrematado)->count(),
-            'total' => $edital->lotes()->sum('valor_arremate'),
-        ] : null;
+        $itensDoEdital = LoteItem::query()->whereIn('lote_id', $edital->lotes()->select('id'))->whereNotNull('recinto_armazenador');
+        $depositos = $itensDoEdital->clone()->distinct()->pluck('recinto_armazenador')->sortBy(fn (string $d) => Str::ascii($d))->values();
 
-        return view('editais.show', compact('edital', 'lotes', 'tipos', 'tipo', 'busca', 'ordem', 'arremate'));
+        // Depósitos de cada lote da página, o com mais itens primeiro (quase
+        // sempre há um só).
+        $depositosPorLote = $itensDoEdital->clone()
+            ->whereIn('lote_id', $lotes->pluck('id'))
+            ->select('lote_id', 'recinto_armazenador')
+            ->selectRaw('count(*) as itens')
+            ->groupBy('lote_id', 'recinto_armazenador')
+            ->get()
+            ->groupBy('lote_id')
+            ->map(fn ($grupo) => $grupo->sortByDesc('itens')->pluck('recinto_armazenador')->values());
+
+        $arremate = $edital->resultado_importado_em ? $edital->resumoArremate() : null;
+
+        return view('editais.show', compact(
+            'edital', 'lotes', 'tipos', 'tipo', 'depositos', 'deposito', 'depositosPorLote', 'busca', 'ordem', 'arremate',
+        ));
     }
 }

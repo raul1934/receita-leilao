@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\ResultadoLote;
 use App\Enums\SituacaoEdital;
 use App\Models\Edital;
+use App\Models\Lote;
 use App\Services\Sle\EditalImporter;
 use App\Services\Sle\EditalRef;
 use App\Services\Sle\SleException;
@@ -17,12 +17,27 @@ use InvalidArgumentException;
 
 #[Signature('leilao:resultados
     {editais?* : Editais já importados (URL ou unidade/número/ano); sem isso, todos os pendentes}
-    {--todos : Relê também os editais finalizados cujo resultado já foi importado}')]
+    {--todos : Relê também os editais finalizados cujo resultado já foi importado}
+    {--recalcular : Só reaplica a regra de lance suspeito aos arremates já gravados (após mudar SLE_ARREMATE_SUSPEITO_MULTIPLO)}')]
 #[Description('Lê o "Extrato do Leilão" (PDF) dos editais encerrados e grava o valor de arremate dos lotes')]
 class ImportarResultadosCommand extends Command
 {
     public function handle(EditalImporter $importer): int
     {
+        if ($this->option('recalcular')) {
+            $suspeitos = 0;
+
+            // O hook "saving" do Lote recalcula arremate_suspeito.
+            Lote::whereNotNull('valor_arremate')->lazyById()->each(function (Lote $lote) use (&$suspeitos) {
+                $lote->save();
+                $suspeitos += (int) $lote->arremate_suspeito;
+            });
+
+            $this->info("{$suspeitos} lance(s) suspeito(s) (acima de ".config('sle.arremate_suspeito_multiplo').' vezes o mínimo/avaliação).');
+
+            return self::SUCCESS;
+        }
+
         try {
             $editais = $this->editais();
         } catch (InvalidArgumentException $e) {
@@ -46,9 +61,9 @@ class ImportarResultadosCommand extends Command
                 continue;
             }
 
-            $arrematados = $edital->lotes()->where('resultado', ResultadoLote::Arrematado)->count();
-            $total = Formato::moeda($edital->lotes()->sum('valor_arremate'));
-            $this->line("{$prefixo}: {$arrematados} de {$edital->lotes()->count()} lote(s) arrematado(s), total {$total}");
+            $resumo = $edital->resumoArremate();
+            $this->line(sprintf('%s: %d de %d lote(s) arrematado(s), total %s%s', $prefixo, $resumo['lotes'], $resumo['de'],
+                Formato::moeda($resumo['total']), $resumo['suspeitos'] ? " <comment>({$resumo['suspeitos']} lance(s) suspeito(s) fora do total)</comment>" : ''));
         }
 
         return $status;
