@@ -69,7 +69,10 @@
         .foto { display: inline-block; position: relative; }
         .foto .qtd { position: absolute; right: 3px; bottom: 3px; background: rgba(0,0,0,.65); color: #fff; font-size: 11px; border-radius: 4px; padding: 0 4px; }
         .galeria a { cursor: zoom-in; }
+        .menu { margin-left: auto; display: flex; gap: 16px; }
+        .menu a.ativo { color: var(--text); font-weight: 600; }
         .mudou { font-weight: 700; }
+        .badge.antes { text-decoration: line-through; color: var(--muted); }
         .badge.mudou { background: var(--accent); color: var(--accent-text); }
         .lightbox { position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 0, .92); display: flex; align-items: center; justify-content: center; }
         .lightbox[hidden], .lightbox button[hidden] { display: none; }
@@ -92,6 +95,10 @@
         <div class="container">
             <a href="{{ route('editais.index') }}" class="marca">Receita Leilão</a>
             <span class="sub">Lotes dos leilões eletrônicos da Receita Federal (SLE)</span>
+            <nav class="menu">
+                <a href="{{ route('editais.index') }}" @class(['ativo' => request()->routeIs('editais.*', 'lotes.*')])>Editais</a>
+                <a href="{{ route('mudancas.index') }}" @class(['ativo' => request()->routeIs('mudancas.*')])>Mudanças recentes</a>
+            </nav>
         </div>
     </header>
 

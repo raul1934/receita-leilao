@@ -44,6 +44,8 @@ Abra http://localhost:8080, cole a URL do edital (ou `700100/12/2026`) e clique 
 
 A lista de editais mostra primeiro os leilões com abertura dos lances ainda por vir (o mais próximo no topo) e depois os que já começaram; também dá para ordenar só pela data, crescente ou decrescente.
 
+A página **Mudanças recentes** (menu no topo) lista as mudanças de situação, valor mínimo e valor de avaliação detectadas nas importações, com o valor anterior, o novo e a variação, filtrando por período e tipo de mudança.
+
 A página de cada edital lista os lotes, com filtros por tipo, busca na descrição dos itens e ordenação por valor. A página do lote mostra itens, fotos e o histórico de situação e preço. Clicar em uma foto (na página do lote ou na miniatura da lista) abre a galeria em tela cheia: setas ou ← → do teclado para navegar, deslizar no celular, Esc para fechar.
 
 ### Pelo terminal
