@@ -15,7 +15,10 @@ use Illuminate\Support\Facades\Log;
  */
 class EditalImporter
 {
-    public function __construct(private readonly SleClient $client) {}
+    public function __construct(
+        private readonly SleClient $client,
+        private readonly PdfParaTexto $pdf,
+    ) {}
 
     /**
      * @param  bool  $comDetalhes  Busca também itens e imagens de cada lote (uma requisição por lote).
@@ -55,7 +58,45 @@ class EditalImporter
             }
         }
 
-        return new ResultadoImportacao($edital->refresh(), $numeros->count(), $detalhados, $falhas);
+        $erroResultado = null;
+
+        if ($edital->temExtrato()) {
+            try {
+                $this->importarResultado($edital);
+            } catch (SleException $e) {
+                $erroResultado = $e->getMessage();
+                Log::warning("Falha ao importar o resultado do edital {$ref}", ['erro' => $e->getMessage()]);
+            }
+        }
+
+        return new ResultadoImportacao($edital->refresh(), $numeros->count(), $detalhados, $falhas, $erroResultado);
+    }
+
+    /**
+     * Lê o "Extrato do Leilão" (PDF) e grava o resultado e o valor de
+     * arremate de cada lote. Só existe para editais com a sessão encerrada.
+     *
+     * @return int Quantidade de lotes encontrados no extrato.
+     */
+    public function importarResultado(Edital $edital): int
+    {
+        $resultados = ExtratoLeilao::interpretar($this->pdf->converter($this->client->extratoLeilao($edital->ref())));
+
+        if ($resultados === []) {
+            throw new SleException("Nenhum lote encontrado no extrato do edital {$edital->ref()}.");
+        }
+
+        DB::transaction(function () use ($edital, $resultados) {
+            foreach ($edital->lotes()->whereIn('numero', array_keys($resultados))->get() as $lote) {
+                $lote->resultado = $resultados[$lote->numero]['resultado'];
+                $lote->valor_arremate = $resultados[$lote->numero]['valor'];
+                $lote->save();
+            }
+
+            $edital->update(['resultado_importado_em' => now()]);
+        });
+
+        return count($resultados);
     }
 
     private function salvarEdital(EditalRef $ref, array $dados, array $extras): Edital

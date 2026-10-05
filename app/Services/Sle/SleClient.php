@@ -39,6 +39,22 @@ class SleClient
     }
 
     /**
+     * PDF "Extrato do Leilão" de um edital encerrado, com o valor de
+     * arrematação de cada lote. A API devolve o PDF em base64 num JSON.
+     */
+    public function extratoLeilao(EditalRef $ref): string
+    {
+        $dados = $this->get("edital/{$ref->path()}/extrato-leilao");
+        $pdf = base64_decode((string) ($dados['data'] ?? ''), true);
+
+        if ($pdf === false || ! str_starts_with($pdf, '%PDF')) {
+            throw new SleException("O extrato do edital {$ref} não veio em PDF.");
+        }
+
+        return $pdf;
+    }
+
+    /**
      * Editais listados na página "Editais disponíveis" do portal, de todas as
      * situações. Para algumas situações o portal limita a listagem aos mais
      * recentes.

@@ -31,6 +31,12 @@
             <div><dt>Abertura dos lances</dt><dd>{{ Formato::dataHora($edital->data_abertura_lances) }}</dd></div>
             <div><dt>Pessoa física pode participar</dt><dd>{{ $edital->permite_pf ? 'Sim' : 'Não' }}</dd></div>
             <div><dt>Importado em</dt><dd>{{ Formato::dataHora($edital->importado_em) }}</dd></div>
+            @if ($arremate)
+                <div>
+                    <dt>Total arrematado</dt>
+                    <dd>{{ Formato::moeda($arremate['total']) }} <span class="muted">({{ $arremate['lotes'] }} de {{ $lotes->total() }} lotes)</span></dd>
+                </div>
+            @endif
         </dl>
         @if ($edital->forma_contato)
             <p><span class="muted">Contato:</span> {{ $edital->forma_contato }}</p>
@@ -54,6 +60,9 @@
                 <option value="">Nº do lote</option>
                 <option value="menor_valor" @selected($ordem === 'menor_valor')>Menor valor mínimo</option>
                 <option value="maior_valor" @selected($ordem === 'maior_valor')>Maior valor mínimo</option>
+                @if ($arremate)
+                    <option value="maior_arremate" @selected($ordem === 'maior_arremate')>Maior arremate</option>
+                @endif
             </select>
             <button type="submit" class="secundario">Filtrar</button>
         </form>
@@ -69,6 +78,9 @@
                     <th>Situação</th>
                     <th class="num">Valor mínimo</th>
                     <th class="num">Valor de avaliação</th>
+                    @if ($arremate)
+                        <th class="num">Arremate</th>
+                    @endif
                     <th class="num">Itens</th>
                 </tr>
             </thead>
@@ -92,10 +104,19 @@
                         <td><span class="badge">{{ $lote->situacao_descricao }}</span></td>
                         <td class="num">{{ Formato::moeda($lote->valor_minimo) }}</td>
                         <td class="num">{{ Formato::moeda($lote->valor_avaliacao) }}</td>
+                        @if ($arremate)
+                            <td class="num">
+                                @if ($lote->valor_arremate !== null)
+                                    <strong>{{ Formato::moeda($lote->valor_arremate) }}</strong>
+                                @else
+                                    <span class="muted">{{ $lote->resultado?->label() ?? '-' }}</span>
+                                @endif
+                            </td>
+                        @endif
                         <td class="num">{{ $lote->detalhes_importados_em ? $lote->itens_count : '-' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="vazio">Nenhum lote encontrado.</td></tr>
+                    <tr><td colspan="8" class="vazio">Nenhum lote encontrado.</td></tr>
                 @endforelse
             </tbody>
         </table>

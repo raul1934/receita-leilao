@@ -22,6 +22,21 @@
             <div><dt>Situação</dt><dd><span class="badge">{{ $lote->situacao_descricao }}</span></dd></div>
             <div><dt>Valor mínimo</dt><dd>{{ Formato::moeda($lote->valor_minimo) }}</dd></div>
             <div><dt>Valor de avaliação</dt><dd>{{ Formato::moeda($lote->valor_avaliacao) }}</dd></div>
+            @if ($lote->resultado)
+                <div>
+                    <dt>Resultado do leilão</dt>
+                    <dd>
+                        @if ($lote->valor_arremate !== null)
+                            <strong>Arrematado por {{ Formato::moeda($lote->valor_arremate) }}</strong>
+                            @if ($agio = Formato::variacao($lote->valor_minimo, $lote->valor_arremate))
+                                <div class="muted">{{ $agio }} sobre o valor mínimo</div>
+                            @endif
+                        @else
+                            {{ $lote->resultado->label() }}
+                        @endif
+                    </dd>
+                </div>
+            @endif
             <div><dt>Pessoa física pode participar</dt><dd>{{ $edital->permite_pf ? 'Sim' : 'Não' }}</dd></div>
             <div><dt>Detalhes importados em</dt><dd>{{ Formato::dataHora($lote->detalhes_importados_em) }}</dd></div>
         </dl>

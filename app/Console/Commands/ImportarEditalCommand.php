@@ -2,12 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\ResultadoLote;
 use App\Jobs\ImportarEdital;
 use App\Models\Lote;
 use App\Services\Sle\EditalImporter;
 use App\Services\Sle\EditalRef;
 use App\Services\Sle\ResultadoImportacao;
 use App\Services\Sle\SleException;
+use App\Support\Formato;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -87,8 +89,17 @@ class ImportarEditalCommand extends Command
             $edital->imagens()->count(),
         ]]);
 
+        if ($edital->resultado_importado_em) {
+            $arrematados = $edital->lotes()->where('resultado', ResultadoLote::Arrematado)->count();
+            $this->info("Resultado: {$arrematados} lote(s) arrematado(s), total ".Formato::moeda($edital->lotes()->sum('valor_arremate')).'.');
+        }
+
         foreach ($resultado->falhas as $numero => $mensagem) {
             $this->warn("Lote {$numero}: {$mensagem}");
+        }
+
+        if ($resultado->erroResultado) {
+            $this->warn("Resultado do leilão: {$resultado->erroResultado}");
         }
     }
 }

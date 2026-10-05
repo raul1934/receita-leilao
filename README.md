@@ -11,8 +11,11 @@ O portal do SLE é uma SPA em Angular: o HTML da página vem praticamente vazio 
 | `edital/{unidade}/{numero}/{ano}`            | Dados do edital e lista resumida dos lotes                 |
 | `lote/{unidade}/{numero}/{ano}/{lote}`       | Itens do lote (descrição, quantidade, recinto) e fotos     |
 | `editais-disponiveis`                        | Editais listados no portal, agrupados por situação         |
+| `edital/{unidade}/{numero}/{ano}/extrato-leilao` | PDF (em base64) com o valor de arrematação de cada lote, publicado quando a sessão termina |
 
 Exemplo: a página `.../portal/edital/700100/12/2026` usa `.../api/edital/700100/12/2026`.
+
+O valor de arremate não vem no JSON dos lotes: ele é lido do PDF "Extrato do Leilão", convertido em texto com o `pdftotext` (incluído na imagem Docker). Só o resultado e o valor de cada lote são gravados; o nome e o CPF/CNPJ do arrematante, que também constam no PDF, são ignorados.
 
 Para não sobrecarregar o site da Receita, o cliente faz uma pausa entre as requisições (`SLE_DELAY_MS`, 300 ms por padrão) e tenta de novo em caso de erro de conexão ou HTTP 5xx.
 
@@ -75,9 +78,21 @@ Os editais são processados dos leilões mais próximos para os mais antigos. Ed
 
 Os códigos de situação estão em [app/Enums/SituacaoEdital.php](app/Enums/SituacaoEdital.php). Para algumas situações (encerrados, homologados), o próprio portal só lista os editais mais recentes.
 
+### Valores de arremate
+
+Ao importar um edital cuja sessão já terminou, o sistema lê também o extrato do leilão e grava o resultado de cada lote (arrematado, não arrematado ou excluído) e o valor de arremate. Para completar editais importados antes disso, ou repetir a leitura:
+
+```bash
+# Todos os editais encerrados que ainda estão sem resultado
+docker compose exec app php artisan leilao:resultados
+
+# Editais específicos
+docker compose exec app php artisan leilao:resultados 600100/3/2026
+```
+
 ### Sincronização automática
 
-O container `scheduler` roda `leilao:sincronizar --fila` todo dia às 06:00 (horário de Brasília), e o `queue` processa as importações. Para mudar o horário, ajuste `SLE_SINCRONIZACAO_HORARIO` no `.env` e reinicie o scheduler (`docker compose restart scheduler`). Para conferir o agendamento:
+O container `scheduler` roda `leilao:sincronizar --fila` e `leilao:resultados` todo dia às 06:00 (horário de Brasília), e o `queue` processa as importações. Para mudar o horário, ajuste `SLE_SINCRONIZACAO_HORARIO` no `.env` e reinicie o scheduler (`docker compose restart scheduler`). Para conferir o agendamento:
 
 ```bash
 docker compose exec app php artisan schedule:list
@@ -90,7 +105,7 @@ Reimportar um edital é seguro: os registros são atualizados, sem duplicar.
 | Tabela         | Conteúdo                                                                                  |
 | -------------- | ----------------------------------------------------------------------------------------- |
 | `editais`      | Unidade/número/ano, situação, datas de propostas e lances, contato, publicação            |
-| `lotes`        | Número, tipo, situação, valor mínimo e valor de avaliação (em reais)                      |
+| `lotes`        | Número, tipo, situação, valor mínimo, valor de avaliação, resultado e valor de arremate (em reais) |
 | `lote_itens`   | Descrição, quantidade, unidade de medida, recinto armazenador                             |
 | `lote_imagens` | URLs da foto e da miniatura (as imagens ficam no servidor da Receita, não são baixadas)   |
 | `lote_historicos` | Situação, valor mínimo e valor de avaliação do lote a cada mudança, com a data (`registrado_em`) |

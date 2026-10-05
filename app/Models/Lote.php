@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ResultadoLote;
 use App\Enums\SituacaoLote;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'edital_id', 'numero', 'sequencial', 'tipo', 'situacao', 'valor_minimo', 'valor_avaliacao',
-    'permite_pf', 'dados', 'detalhes_importados_em',
+    'resultado', 'valor_arremate', 'permite_pf', 'dados', 'detalhes_importados_em',
 ])]
 class Lote extends Model
 {
@@ -37,6 +38,8 @@ class Lote extends Model
         return [
             'valor_minimo' => 'decimal:2',
             'valor_avaliacao' => 'decimal:2',
+            'resultado' => ResultadoLote::class,
+            'valor_arremate' => 'decimal:2',
             'permite_pf' => 'boolean',
             'dados' => 'array',
             'detalhes_importados_em' => 'datetime',

@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 #[Fillable([
     'unidade', 'numero', 'exercicio', 'codigo', 'situacao', 'tipo', 'orgao', 'unidade_nome', 'cidade',
     'permite_pf', 'data_inicio_propostas', 'data_fim_propostas', 'data_classificacao', 'data_abertura_lances',
-    'forma_contato', 'dados_publicacao', 'dados', 'importado_em',
+    'forma_contato', 'dados_publicacao', 'dados', 'importado_em', 'resultado_importado_em',
 ])]
 class Edital extends Model
 {
@@ -31,6 +31,7 @@ class Edital extends Model
             'data_abertura_lances' => 'datetime',
             'dados' => 'array',
             'importado_em' => 'datetime',
+            'resultado_importado_em' => 'datetime',
         ];
     }
 
@@ -56,6 +57,15 @@ class Edital extends Model
     public function imagens(): HasManyThrough
     {
         return $this->hasManyThrough(LoteImagem::class, Lote::class);
+    }
+
+    /**
+     * O portal publica o "Extrato do Leilão" (valores de arremate) quando a
+     * sessão do edital termina; a permissão vem nos dados do edital.
+     */
+    public function temExtrato(): bool
+    {
+        return in_array('extrato-leilao', $this->dados['permissoes'] ?? [], true);
     }
 
     public function ref(): EditalRef

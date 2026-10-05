@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ResultadoLote;
 use App\Jobs\ImportarEdital;
 use App\Models\Edital;
 use App\Services\Sle\EditalRef;
@@ -65,6 +66,7 @@ class EditalController extends Controller
             ->when($busca, fn ($q) => $q->whereHas('itens', fn ($itens) => $itens->where('descricao', 'like', "%{$busca}%")))
             ->when($ordem === 'menor_valor', fn ($q) => $q->orderBy('valor_minimo'))
             ->when($ordem === 'maior_valor', fn ($q) => $q->orderByDesc('valor_minimo'))
+            ->when($ordem === 'maior_arremate', fn ($q) => $q->orderByDesc('valor_arremate'))
             ->orderBy('numero')
             ->paginate(50)
             ->withQueryString();
@@ -76,6 +78,11 @@ class EditalController extends Controller
             ->sortBy(fn (string $t) => Str::ascii($t))
             ->values();
 
-        return view('editais.show', compact('edital', 'lotes', 'tipos', 'tipo', 'busca', 'ordem'));
+        $arremate = $edital->resultado_importado_em ? [
+            'lotes' => $edital->lotes()->where('resultado', ResultadoLote::Arrematado)->count(),
+            'total' => $edital->lotes()->sum('valor_arremate'),
+        ] : null;
+
+        return view('editais.show', compact('edital', 'lotes', 'tipos', 'tipo', 'busca', 'ordem', 'arremate'));
     }
 }

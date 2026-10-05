@@ -6,7 +6,7 @@ ARG UID=1000
 ARG GID=1000
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git unzip \
+    && apt-get install -y --no-install-recommends git unzip poppler-utils \
     && docker-php-ext-install pdo_mysql pcntl \
     && rm -rf /var/lib/apt/lists/*
 
