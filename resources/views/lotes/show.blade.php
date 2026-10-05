@@ -1,0 +1,79 @@
+@extends('layouts.app')
+
+@use('App\Support\Formato')
+
+@section('title', 'Lote '.$lote->numero.' · Edital '.$edital->ref())
+
+@section('content')
+    <p><a href="{{ route('editais.show', $edital) }}">&larr; Edital {{ $edital->codigo ?? $edital->ref() }}</a></p>
+
+    <div class="cabecalho">
+        <div>
+            <h1>Lote {{ $lote->numero }}</h1>
+            <div class="muted">{{ $lote->tipo }}</div>
+        </div>
+        <div class="acoes">
+            <a class="botao secundario" href="{{ $edital->ref()->urlPortal() }}/lote/{{ $lote->numero }}" target="_blank" rel="noopener">Ver no portal</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <dl class="grade">
+            <div><dt>Situação</dt><dd><span class="badge">{{ $lote->situacao_descricao }}</span></dd></div>
+            <div><dt>Valor mínimo</dt><dd>{{ Formato::moeda($lote->valor_minimo) }}</dd></div>
+            <div><dt>Valor de avaliação</dt><dd>{{ Formato::moeda($lote->valor_avaliacao) }}</dd></div>
+            <div><dt>Pessoa física pode participar</dt><dd>{{ $edital->permite_pf ? 'Sim' : 'Não' }}</dd></div>
+            <div><dt>Detalhes importados em</dt><dd>{{ Formato::dataHora($lote->detalhes_importados_em) }}</dd></div>
+        </dl>
+    </div>
+
+    @if ($lote->imagens->isNotEmpty())
+        <h2>Fotos ({{ $lote->imagens->count() }})</h2>
+        <div class="galeria">
+            @foreach ($lote->imagens as $imagem)
+                <a href="{{ $imagem->url }}" target="_blank" rel="noopener">
+                    <img loading="lazy" referrerpolicy="no-referrer" alt="Foto do lote {{ $lote->numero }}"
+                         src="{{ $imagem->url_miniatura ?? $imagem->url }}">
+                </a>
+            @endforeach
+        </div>
+    @endif
+
+    <h2>Itens ({{ $lote->itens->count() }})</h2>
+    <div class="tabela">
+        <table>
+            <thead>
+                <tr>
+                    <th class="num">#</th>
+                    <th>Descrição</th>
+                    <th class="num">Quantidade</th>
+                    <th>Unidade</th>
+                    <th>Recinto armazenador</th>
+                    <th>Referência</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($lote->itens as $item)
+                    <tr>
+                        <td class="num">{{ $item->ordem }}</td>
+                        <td>{{ $item->descricao ?? '-' }}</td>
+                        <td class="num">{{ Formato::quantidade($item->quantidade) }}</td>
+                        <td>{{ $item->unidade_medida ?? '-' }}</td>
+                        <td>{{ $item->recinto_armazenador ?? '-' }}</td>
+                        <td>{{ $item->nr_referencia ?? '-' }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="vazio">
+                            @if ($lote->detalhes_importados_em)
+                                Este lote não tem itens.
+                            @else
+                                Os itens deste lote ainda não foram importados. Use "Reimportar" na página do edital.
+                            @endif
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+@endsection

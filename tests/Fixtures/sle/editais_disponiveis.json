@@ -1,0 +1,60 @@
+{
+  "agora": "2026-10-05 15:26",
+  "situacoes": [
+    {
+      "situacao": 2,
+      "editaisEstaoLimitados": false,
+      "lista": [
+        {
+          "edital": "0700100/000012/2026",
+          "edle": "700100/12/2026",
+          "codigoSituacao": 2,
+          "permitePF": false,
+          "tipo": "1",
+          "uaNm": "SUPERINTENDÊNCIA REGIONAL DA RECEITA FEDERAL DO BRASIL DA 7ª REGIÃO FISCAL",
+          "orgao": "RFB",
+          "cidade": "RIO DE JANEIRO",
+          "dataInicioPropostas": "2026-10-06 09:00",
+          "dataFimPropostas": "2026-10-07 18:00",
+          "dataAberturaLances": "2026-10-08 10:00",
+          "lotes": 1
+        },
+        {
+          "edital": "0717700/000003/2026",
+          "edle": "717700/3/2026",
+          "codigoSituacao": 2,
+          "permitePF": true,
+          "tipo": "1",
+          "uaNm": "AEROPORTO INTERNACIONAL DO GALEÃO",
+          "orgao": "RFB",
+          "cidade": "RIO DE JANEIRO",
+          "dataInicioPropostas": "2026-11-03 08:00",
+          "dataFimPropostas": "2026-11-11 18:00",
+          "dataAberturaLances": "2026-11-12 10:30",
+          "lotes": 9
+        }
+      ]
+    },
+    {
+      "situacao": 12,
+      "editaisEstaoLimitados": true,
+      "lista": [
+        {
+          "edital": "0600100/000003/2026",
+          "edle": "600100/3/2026",
+          "codigoSituacao": 12,
+          "permitePF": true,
+          "tipo": "1",
+          "uaNm": "SUPERINTENDÊNCIA REGIONAL DA RECEITA FEDERAL DO BRASIL DA 6ª REGIÃO FISCAL",
+          "orgao": "RFB",
+          "cidade": "BELO HORIZONTE",
+          "dataInicioPropostas": "2026-08-10 08:00",
+          "dataFimPropostas": "2026-08-12 21:00",
+          "dataAberturaLances": "2026-08-13 10:00",
+          "lotes": 21
+        }
+      ]
+    }
+  ],
+  "unidadeInvalida": null
+}
