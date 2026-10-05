@@ -110,6 +110,8 @@ docker compose exec app php artisan schedule:list
 
 Reimportar um edital é seguro: os registros são atualizados, sem duplicar.
 
+Lotes baixados para reaproveitamento (situações 17 a 20, que o portal mostra como "Baixado") não têm itens nem fotos: a API recusa os detalhes deles (HTTP 422), então o sistema nem pede. Eles continuam na lista com tipo, valores e situação.
+
 ## Banco de dados
 
 | Tabela         | Conteúdo                                                                                  |

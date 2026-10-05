@@ -97,6 +97,10 @@ class ImportarEditalCommand extends Command
             }
         }
 
+        if ($resultado->lotesSemDetalhesNoPortal) {
+            $this->line("{$resultado->lotesSemDetalhesNoPortal} lote(s) baixado(s): o portal não mostra os itens desses lotes.");
+        }
+
         foreach ($resultado->falhas as $numero => $mensagem) {
             $this->warn("Lote {$numero}: {$mensagem}");
         }

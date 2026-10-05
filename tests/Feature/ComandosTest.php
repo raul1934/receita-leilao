@@ -128,6 +128,19 @@ class ComandosTest extends TestCase
         Queue::assertPushed(ImportarEdital::class, fn (ImportarEdital $job) => $job->ref->path() === '600100/3/2026');
     }
 
+    public function test_sincronizar_ignora_finalizado_cujos_lotes_sem_detalhes_estao_baixados(): void
+    {
+        $this->fakeSle();
+        Queue::fake();
+        $edital = $this->editalFinalizado(situacao: 12, detalhado: true);
+        // O portal não mostra detalhes de lotes baixados (situações 17 a 20).
+        $edital->lotes()->create(['numero' => 2, 'situacao' => 18]);
+
+        $this->artisan('leilao:sincronizar', ['--fila' => true])->assertSuccessful();
+
+        Queue::assertNotPushed(ImportarEdital::class, fn (ImportarEdital $job) => $job->ref->path() === '600100/3/2026');
+    }
+
     public function test_sincronizacao_diaria_esta_agendada(): void
     {
         $eventos = collect(app(Schedule::class)->events())

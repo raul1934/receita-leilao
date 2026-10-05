@@ -185,6 +185,22 @@ class EditalImporterTest extends TestCase
         $this->assertSame(0, LoteItem::count());
     }
 
+    public function test_nao_pede_detalhes_de_lote_baixado(): void
+    {
+        // Situação 18 (reaproveitado): a API responderia HTTP 422.
+        $edital = $this->fixture('edital_700100_12_2026');
+        $edital['listaLotes'][0]['situacaoLote'] = 18;
+        $this->fakeSle(['*/api/edital/700100/12/2026' => Http::response($edital)]);
+
+        $resultado = $this->importar();
+
+        Http::assertSentCount(1);
+        $this->assertSame(0, $resultado->lotesDetalhados);
+        $this->assertSame(1, $resultado->lotesSemDetalhesNoPortal);
+        $this->assertSame([], $resultado->falhas);
+        $this->assertSame(18, Lote::sole()->situacao);
+    }
+
     public function test_falha_ao_ler_o_edital_lanca_excecao(): void
     {
         $this->fakeSle(['*/api/edital/700100/12/2026' => $this->respostaDeErroDoSle()]);

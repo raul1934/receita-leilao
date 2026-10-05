@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\SituacaoEdital;
+use App\Enums\SituacaoLote;
 use App\Jobs\ImportarEdital;
 use App\Models\Edital;
 use App\Services\Sle\EditalImporter;
@@ -94,7 +95,9 @@ class SincronizarEditaisCommand extends Command
         return Edital::query()
             ->whereIn('situacao', $finalizadas)
             ->whereNotNull('importado_em')
-            ->whereDoesntHave('lotes', fn ($q) => $q->whereNull('detalhes_importados_em'))
+            // Lotes baixados nunca terão detalhes (o portal recusa); não contam.
+            ->whereDoesntHave('lotes', fn ($q) => $q->whereNull('detalhes_importados_em')
+                ->where(fn ($q) => $q->whereNull('situacao')->orWhereNotIn('situacao', SituacaoLote::semDetalhes())))
             ->get(['unidade', 'numero', 'exercicio', 'situacao'])
             ->map(fn (Edital $e) => $e->ref()->path().'/'.$e->situacao);
     }

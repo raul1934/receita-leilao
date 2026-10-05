@@ -2,6 +2,7 @@
 
 namespace App\Services\Sle;
 
+use App\Enums\SituacaoLote;
 use App\Models\Edital;
 use App\Models\Lote;
 use Illuminate\Support\Arr;
@@ -38,18 +39,23 @@ class EditalImporter
         $numeros = collect($dados['listaLotes'] ?? [])->pluck('nrAtribuido')->map(fn ($n) => (int) $n);
         $falhas = [];
         $detalhados = 0;
+        $semDetalhesNoPortal = 0;
 
         if ($comDetalhes) {
             $lotes = $edital->lotes()->whereIn('numero', $numeros)->orderBy('numero')->get();
 
             foreach ($lotes as $indice => $lote) {
-                try {
-                    $detalhe = $this->client->lote($ref, $lote->numero);
-                    DB::transaction(fn () => $this->salvarDetalhesLote($lote, $detalhe));
-                    $detalhados++;
-                } catch (SleException $e) {
-                    $falhas[$lote->numero] = $e->getMessage();
-                    Log::warning("Falha ao importar o lote {$lote->numero} do edital {$ref}", ['erro' => $e->getMessage()]);
+                if (SituacaoLote::tryFrom((int) $lote->situacao)?->detalhesDisponiveis() === false) {
+                    $semDetalhesNoPortal++;
+                } else {
+                    try {
+                        $detalhe = $this->client->lote($ref, $lote->numero);
+                        DB::transaction(fn () => $this->salvarDetalhesLote($lote, $detalhe));
+                        $detalhados++;
+                    } catch (SleException $e) {
+                        $falhas[$lote->numero] = $e->getMessage();
+                        Log::warning("Falha ao importar o lote {$lote->numero} do edital {$ref}", ['erro' => $e->getMessage()]);
+                    }
                 }
 
                 if ($aoProcessarLote) {
@@ -69,7 +75,7 @@ class EditalImporter
             }
         }
 
-        return new ResultadoImportacao($edital->refresh(), $numeros->count(), $detalhados, $falhas, $erroResultado);
+        return new ResultadoImportacao($edital->refresh(), $numeros->count(), $detalhados, $falhas, $erroResultado, $semDetalhesNoPortal);
     }
 
     /**

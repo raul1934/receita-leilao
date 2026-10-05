@@ -57,6 +57,32 @@ enum SituacaoLote: int
         };
     }
 
+    /**
+     * Lotes baixados para reaproveitamento (o portal mostra todos como
+     * "Baixado"): a API recusa os detalhes com HTTP 422, então os itens e as
+     * fotos não podem ser importados.
+     */
+    public function detalhesDisponiveis(): bool
+    {
+        return ! in_array($this, [
+            self::DisponivelParaReaproveitamento,
+            self::Reaproveitado,
+            self::ComReaproveitamentoCancelado,
+            self::Disponivel,
+        ], true);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public static function semDetalhes(): array
+    {
+        return array_values(array_map(
+            fn (self $situacao) => $situacao->value,
+            array_filter(self::cases(), fn (self $situacao) => ! $situacao->detalhesDisponiveis()),
+        ));
+    }
+
     public static function descricao(?int $codigo): string
     {
         if ($codigo === null) {

@@ -89,6 +89,8 @@
                         <td colspan="6" class="vazio">
                             @if ($lote->detalhes_importados_em)
                                 Este lote não tem itens.
+                            @elseif (\App\Enums\SituacaoLote::tryFrom((int) $lote->situacao)?->detalhesDisponiveis() === false)
+                                Lote baixado para reaproveitamento: o portal não mostra os itens dele.
                             @else
                                 Os itens deste lote ainda não foram importados. Use "Reimportar" na página do edital.
                             @endif
