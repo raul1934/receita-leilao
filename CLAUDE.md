@@ -10,7 +10,7 @@ PHP and Composer are not installed on the host; everything runs in Docker. Do no
 - Artisan/Composer: `docker compose exec app php artisan ...`, `docker compose exec app composer ...`
 - Tests: `docker compose exec app php artisan test` (SQLite in memory, HTTP faked with fixtures in `tests/Fixtures/sle`)
 - Format: `docker compose exec app ./vendor/bin/pint`
-- After changing code used by jobs: `docker compose restart queue`
+- After changing code: `docker compose restart queue scheduler` (wait for running imports to finish first; restarting the worker interrupts the current job)
 
 ## Code map
 
@@ -19,6 +19,7 @@ PHP and Composer are not installed on the host; everything runs in Docker. Do no
 - `app/Services/Sle/EditalRef.php`: parses portal URLs / `unidade/numero/ano` identifiers.
 - `app/Console/Commands`: `leilao:importar` and `leilao:sincronizar`.
 - `app/Jobs/ImportarEdital.php`: queued import used by the web form and `--fila`.
+- `routes/console.php`: daily `leilao:sincronizar --fila`, run by the `scheduler` container (`schedule:work`).
 - Domain names are in Portuguese, matching the portal's vocabulary.
 
 ## API notes

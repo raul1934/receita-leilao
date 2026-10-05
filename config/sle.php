@@ -25,4 +25,7 @@ return [
 
     'user_agent' => env('SLE_USER_AGENT', 'Mozilla/5.0 (compatible; receita-leilao/1.0)'),
 
+    // Horário diário (fuso da aplicação) em que o scheduler roda leilao:sincronizar.
+    'sincronizacao_horario' => env('SLE_SINCRONIZACAO_HORARIO', '06:00'),
+
 ];

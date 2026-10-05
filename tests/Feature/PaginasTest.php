@@ -37,6 +37,27 @@ class PaginasTest extends TestCase
             ->assertSee('08/10/2026 10:00');
     }
 
+    public function test_ordena_pela_abertura_dos_lances_com_os_proximos_primeiro(): void
+    {
+        $this->travelTo('2026-10-05 12:00');
+
+        foreach ([
+            'ED-PASSADO-RECENTE' => '2026-10-01 10:00',
+            'ED-PASSADO-ANTIGO' => '2026-08-01 10:00',
+            'ED-PROXIMO' => '2026-10-08 10:00',
+            'ED-DISTANTE' => '2026-11-12 10:30',
+        ] as $codigo => $abertura) {
+            Edital::create([
+                'unidade' => 700100, 'numero' => crc32($codigo) % 100000, 'exercicio' => 2026,
+                'codigo' => $codigo, 'data_abertura_lances' => $abertura,
+            ]);
+        }
+
+        $this->get('/')->assertSeeInOrder(['ED-PROXIMO', 'ED-DISTANTE', 'ED-PASSADO-RECENTE', 'ED-PASSADO-ANTIGO']);
+        $this->get('/?ordem=abertura_asc')->assertSeeInOrder(['ED-PASSADO-ANTIGO', 'ED-PASSADO-RECENTE', 'ED-PROXIMO', 'ED-DISTANTE']);
+        $this->get('/?ordem=abertura_desc')->assertSeeInOrder(['ED-DISTANTE', 'ED-PROXIMO', 'ED-PASSADO-RECENTE', 'ED-PASSADO-ANTIGO']);
+    }
+
     public function test_detalhe_do_edital_lista_os_lotes(): void
     {
         $edital = $this->editalImportado();

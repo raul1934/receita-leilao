@@ -1,8 +1,10 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Rodado pelo container "scheduler" (php artisan schedule:work). As importações
+// vão para a fila; o job é único por edital, então uma execução que ainda não
+// terminou não é duplicada.
+Schedule::command('leilao:sincronizar --fila')
+    ->dailyAt(config('sle.sincronizacao_horario'))
+    ->withoutOverlapping();

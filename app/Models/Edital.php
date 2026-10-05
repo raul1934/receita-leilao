@@ -5,7 +5,9 @@ namespace App\Models;
 use App\Enums\SituacaoEdital;
 use App\Services\Sle\EditalRef;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -59,6 +61,20 @@ class Edital extends Model
     public function ref(): EditalRef
     {
         return new EditalRef($this->unidade, $this->numero, $this->exercicio);
+    }
+
+    /**
+     * Leilões com abertura dos lances ainda por vir primeiro (o mais próximo
+     * no topo) e depois os que já começaram (o mais recente no topo).
+     */
+    #[Scope]
+    protected function proximosPrimeiro(Builder $query): void
+    {
+        $agora = now();
+
+        $query->orderByRaw('case when data_abertura_lances >= ? then 0 else 1 end', [$agora])
+            ->orderByRaw('case when data_abertura_lances >= ? then data_abertura_lances end', [$agora])
+            ->orderByDesc('data_abertura_lances');
     }
 
     protected function situacaoDescricao(): Attribute

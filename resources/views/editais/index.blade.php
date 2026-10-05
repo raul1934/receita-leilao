@@ -25,6 +25,11 @@
         <h2 style="margin: 0">Editais importados</h2>
         <form method="GET" action="{{ route('editais.index') }}" class="linha">
             <input type="search" name="q" value="{{ $busca }}" placeholder="Buscar por edital, unidade ou cidade">
+            <select name="ordem" aria-label="Ordenação">
+                <option value="">Próximos leilões primeiro</option>
+                <option value="abertura_asc" @selected($ordem === 'abertura_asc')>Abertura dos lances: mais antiga primeiro</option>
+                <option value="abertura_desc" @selected($ordem === 'abertura_desc')>Abertura dos lances: mais recente primeiro</option>
+            </select>
             <button type="submit" class="secundario">Buscar</button>
         </form>
     </div>
@@ -34,10 +39,10 @@
             <thead>
                 <tr>
                     <th>Edital</th>
+                    <th>Abertura dos lances</th>
                     <th>Unidade</th>
                     <th>Situação</th>
                     <th>Propostas até</th>
-                    <th>Abertura dos lances</th>
                     <th class="num">Lotes</th>
                     <th>Importado em</th>
                 </tr>
@@ -46,6 +51,7 @@
                 @forelse ($editais as $edital)
                     <tr>
                         <td><a href="{{ route('editais.show', $edital) }}">{{ $edital->codigo ?? $edital->ref() }}</a></td>
+                        <td>{{ Formato::dataHora($edital->data_abertura_lances) }}</td>
                         <td>
                             {{ $edital->unidade_nome ?? '-' }}
                             @if ($edital->cidade)
@@ -54,7 +60,6 @@
                         </td>
                         <td><span class="badge">{{ $edital->situacao_descricao }}</span></td>
                         <td>{{ Formato::dataHora($edital->data_fim_propostas) }}</td>
-                        <td>{{ Formato::dataHora($edital->data_abertura_lances) }}</td>
                         <td class="num">{{ $edital->lotes_count }}</td>
                         <td>{{ Formato::dataHora($edital->importado_em) }}</td>
                     </tr>

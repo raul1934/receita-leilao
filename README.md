@@ -30,6 +30,7 @@ Na primeira vez, o container `app` instala as dependências, cria o `.env` a par
 | ------- | ------------------------------------------------- |
 | `app`   | PHP-FPM com o Laravel                             |
 | `queue` | Worker da fila, que roda as importações da web    |
+| `scheduler` | Agendador do Laravel, que dispara a sincronização diária |
 | `web`   | Nginx na porta 8080 (`APP_PORT`)                  |
 | `db`    | MySQL 8.4, exposto na porta 3307 (`FORWARD_DB_PORT`) |
 
@@ -40,6 +41,8 @@ Em Linux, defina `HOST_UID` e `HOST_GID` no `.env` com o resultado de `id -u` e 
 ### Pela interface web
 
 Abra http://localhost:8080, cole a URL do edital (ou `700100/12/2026`) e clique em **Importar**. A importação vai para a fila e o container `queue` processa em segundo plano; atualize a página depois de alguns segundos. Editais grandes levam mais tempo, porque cada lote é uma requisição.
+
+A lista de editais mostra primeiro os leilões com abertura dos lances ainda por vir (o mais próximo no topo) e depois os que já começaram; também dá para ordenar só pela data, crescente ou decrescente.
 
 A página de cada edital lista os lotes, com filtros por tipo, busca na descrição dos itens e ordenação por valor. A página do lote mostra itens e fotos.
 
@@ -66,7 +69,17 @@ docker compose exec app php artisan leilao:sincronizar --fila
 docker compose exec app php artisan leilao:sincronizar --situacao=2 --situacao=3
 ```
 
+Os editais são processados dos leilões mais próximos para os mais antigos. Editais finalizados (encerrado, homologado, cancelado, ata publicada) que já foram importados por completo e não mudaram de situação são ignorados; use `--todos` para reimportar tudo.
+
 Os códigos de situação estão em [app/Enums/SituacaoEdital.php](app/Enums/SituacaoEdital.php). Para algumas situações (encerrados, homologados), o próprio portal só lista os editais mais recentes.
+
+### Sincronização automática
+
+O container `scheduler` roda `leilao:sincronizar --fila` todo dia às 06:00 (horário de Brasília), e o `queue` processa as importações. Para mudar o horário, ajuste `SLE_SINCRONIZACAO_HORARIO` no `.env` e reinicie o scheduler (`docker compose restart scheduler`). Para conferir o agendamento:
+
+```bash
+docker compose exec app php artisan schedule:list
+```
 
 Reimportar um edital é seguro: os registros são atualizados, sem duplicar.
 
@@ -99,5 +112,6 @@ Os testes usam SQLite em memória e respostas reais da API salvas em [tests/Fixt
 | `SLE_DELAY_MS`   | `300`                                                    | Pausa mínima entre requisições                  |
 | `SLE_RETRIES`    | `2`                                                      | Novas tentativas em falha de conexão ou HTTP 5xx |
 | `SLE_TIMEOUT`    | `30`                                                     | Timeout de cada requisição, em segundos         |
+| `SLE_SINCRONIZACAO_HORARIO` | `06:00`                                       | Horário da sincronização diária                 |
 
-Depois de alterar o código, reinicie o worker para ele carregar a versão nova: `docker compose restart queue`.
+Depois de alterar o código, reinicie o worker e o agendador para eles carregarem a versão nova: `docker compose restart queue scheduler`. Se houver uma importação em andamento, espere ela terminar: reiniciar o worker interrompe o edital atual.

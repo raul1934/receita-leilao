@@ -34,6 +34,15 @@ services:
       app:
         condition: service_healthy
 
+  scheduler:
+    <<: *php
+    environment:
+      CONTAINER_ROLE: scheduler
+    command: ["php", "artisan", "schedule:work"]
+    depends_on:
+      app:
+        condition: service_healthy
+
   web:
     image: nginx:1.29-alpine
     ports:

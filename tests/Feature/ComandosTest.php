@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Jobs\ImportarEdital;
 use App\Models\Edital;
+use Illuminate\Console\Scheduling\Event;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -68,6 +70,82 @@ class ComandosTest extends TestCase
         Queue::assertPushed(ImportarEdital::class, 2);
         Queue::assertPushed(ImportarEdital::class, fn (ImportarEdital $job) => $job->ref->path() === '717700/3/2026' && $job->cidade === 'RIO DE JANEIRO');
         Queue::assertNotPushed(ImportarEdital::class, fn (ImportarEdital $job) => $job->ref->path() === '600100/3/2026');
+    }
+
+    public function test_sincronizar_processa_os_leiloes_mais_proximos_primeiro(): void
+    {
+        $this->travelTo('2026-10-05 12:00');
+        $this->fakeSle();
+        Queue::fake();
+
+        $this->artisan('leilao:sincronizar', ['--fila' => true])->assertSuccessful();
+
+        // Abertura dos lances: 08/10 e 12/11 ainda por vir; 13/08 já passou.
+        $this->assertSame(
+            ['700100/12/2026', '717700/3/2026', '600100/3/2026'],
+            Queue::pushed(ImportarEdital::class)->map(fn (ImportarEdital $job) => $job->ref->path())->values()->all(),
+        );
+    }
+
+    public function test_sincronizar_ignora_finalizados_que_ja_foram_importados(): void
+    {
+        $this->fakeSle();
+        Queue::fake();
+        $this->editalFinalizado(situacao: 12, detalhado: true);
+
+        $this->artisan('leilao:sincronizar', ['--fila' => true])
+            ->expectsOutputToContain('3 edital(is) encontrado(s), 1 finalizado(s) e já importado(s) ignorado(s)')
+            ->assertSuccessful();
+
+        Queue::assertPushed(ImportarEdital::class, 2);
+        Queue::assertNotPushed(ImportarEdital::class, fn (ImportarEdital $job) => $job->ref->path() === '600100/3/2026');
+
+        $this->artisan('leilao:sincronizar', ['--fila' => true, '--todos' => true])->assertSuccessful();
+
+        Queue::assertPushed(ImportarEdital::class, fn (ImportarEdital $job) => $job->ref->path() === '600100/3/2026');
+    }
+
+    public function test_sincronizar_reimporta_finalizado_que_mudou_de_situacao(): void
+    {
+        $this->fakeSle();
+        Queue::fake();
+        // Na última importação o leilão ainda estava em andamento.
+        $this->editalFinalizado(situacao: 8, detalhado: true);
+
+        $this->artisan('leilao:sincronizar', ['--fila' => true])->assertSuccessful();
+
+        Queue::assertPushed(ImportarEdital::class, fn (ImportarEdital $job) => $job->ref->path() === '600100/3/2026');
+    }
+
+    public function test_sincronizar_reimporta_finalizado_com_lotes_sem_detalhes(): void
+    {
+        $this->fakeSle();
+        Queue::fake();
+        $this->editalFinalizado(situacao: 12, detalhado: false);
+
+        $this->artisan('leilao:sincronizar', ['--fila' => true])->assertSuccessful();
+
+        Queue::assertPushed(ImportarEdital::class, fn (ImportarEdital $job) => $job->ref->path() === '600100/3/2026');
+    }
+
+    public function test_sincronizacao_diaria_esta_agendada(): void
+    {
+        $eventos = collect(app(Schedule::class)->events())
+            ->filter(fn (Event $evento) => str_contains($evento->command, 'leilao:sincronizar --fila'));
+
+        $this->assertCount(1, $eventos);
+        $this->assertSame('0 6 * * *', $eventos->first()->expression);
+    }
+
+    private function editalFinalizado(int $situacao, bool $detalhado): Edital
+    {
+        $edital = Edital::create([
+            'unidade' => 600100, 'numero' => 3, 'exercicio' => 2026,
+            'situacao' => $situacao, 'importado_em' => now(),
+        ]);
+        $edital->lotes()->create(['numero' => 1, 'detalhes_importados_em' => $detalhado ? now() : null]);
+
+        return $edital;
     }
 
     public function test_sincronizar_importa_e_continua_apos_falha(): void

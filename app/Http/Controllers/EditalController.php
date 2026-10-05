@@ -16,6 +16,7 @@ class EditalController extends Controller
     public function index(Request $request): View
     {
         $busca = $request->string('q')->trim()->value();
+        $ordem = $request->string('ordem')->value();
 
         $editais = Edital::query()
             ->withCount('lotes')
@@ -23,11 +24,16 @@ class EditalController extends Controller
                 ->where('codigo', 'like', "%{$busca}%")
                 ->orWhere('unidade_nome', 'like', "%{$busca}%")
                 ->orWhere('cidade', 'like', "%{$busca}%")))
-            ->orderByDesc('data_abertura_lances')
+            ->when(
+                $ordem === 'abertura_asc' || $ordem === 'abertura_desc',
+                fn ($q) => $q->orderBy('data_abertura_lances', $ordem === 'abertura_asc' ? 'asc' : 'desc'),
+                fn ($q) => $q->proximosPrimeiro(),
+            )
+            ->orderBy('id')
             ->paginate(25)
             ->withQueryString();
 
-        return view('editais.index', ['editais' => $editais, 'busca' => $busca]);
+        return view('editais.index', ['editais' => $editais, 'busca' => $busca, 'ordem' => $ordem]);
     }
 
     public function store(Request $request): RedirectResponse

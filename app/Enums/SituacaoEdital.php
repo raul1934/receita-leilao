@@ -46,6 +46,21 @@ enum SituacaoEdital: int
         };
     }
 
+    /**
+     * Leilão já terminado: os lotes praticamente não mudam mais, então a
+     * sincronização diária não precisa reimportar o edital.
+     */
+    public function finalizada(): bool
+    {
+        return in_array($this, [
+            self::Encerrado,
+            self::Homologado,
+            self::Cancelado,
+            self::EncerradaSessaoPublicaAtaPublicada,
+            self::Excluido,
+        ], true);
+    }
+
     public static function descricao(?int $codigo): string
     {
         if ($codigo === null) {
