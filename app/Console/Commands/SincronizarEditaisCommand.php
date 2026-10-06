@@ -10,6 +10,7 @@ use App\Services\Sle\EditalImporter;
 use App\Services\Sle\EditalRef;
 use App\Services\Sle\SleClient;
 use App\Services\Sle\SleException;
+use App\Support\ExecucaoDiaria;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -74,6 +75,11 @@ class SincronizarEditaisCommand extends Command
                 $this->line("{$prefixo}: <error>{$e->getMessage()}</error>");
                 $status = self::FAILURE;
             }
+        }
+
+        // Uma sincronização completa (manual ou agendada) conta como a do dia.
+        if (! $situacoes) {
+            ExecucaoDiaria::registrar('leilao:sincronizar');
         }
 
         return $status;

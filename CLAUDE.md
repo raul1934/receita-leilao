@@ -22,7 +22,7 @@ PHP and Composer are not installed on the host; everything runs in Docker. Do no
 - `app/Jobs/ImportarEdital.php`: queued import used by the web form and `--fila`.
 - `app/Models/Lote.php`: `created`/`updated` events write a `LoteHistorico` snapshot when `situacao`, `valor_minimo` or `valor_avaliacao` change.
 - `resources/views/partials/galeria.blade.php`: vanilla JS lightbox for any `[data-galeria]` element (JSON list, HTML-escaped via `{{ json_encode() }}`; `@json` does not escape quotes in this Laravel version).
-- `routes/console.php`: daily `leilao:sincronizar --fila`, run by the `scheduler` container (`schedule:work`).
+- `routes/console.php`: `leilao:sincronizar --fila` and `leilao:resultados` checked every 5 minutes by the `scheduler` container (`schedule:work`) and run once per day after `SLE_SINCRONIZACAO_HORARIO`, catching up if the PC was off (`App\Support\ExecucaoDiaria`, cache-based marker; full manual runs count).
 - Domain names are in Portuguese, matching the portal's vocabulary.
 
 ## API notes

@@ -102,7 +102,7 @@ docker compose exec app php artisan leilao:resultados --recalcular
 
 ### Sincronização automática
 
-O container `scheduler` roda `leilao:sincronizar --fila` e `leilao:resultados` todo dia às 06:00 (horário de Brasília), e o `queue` processa as importações. Para mudar o horário, ajuste `SLE_SINCRONIZACAO_HORARIO` no `.env` e reinicie o scheduler (`docker compose restart scheduler`). Para conferir o agendamento:
+O container `scheduler` roda `leilao:sincronizar --fila` e `leilao:resultados` uma vez por dia a partir das 06:00 (horário de Brasília), e o `queue` processa as importações. Se o computador estiver desligado às 06:00, a sincronização do dia roda assim que ele ligar (o agendador confere a cada 5 minutos se ela já aconteceu). Rodar `leilao:sincronizar` completo manualmente também conta como a do dia. Para mudar o horário, ajuste `SLE_SINCRONIZACAO_HORARIO` no `.env` e reinicie o scheduler (`docker compose restart scheduler`). Para conferir o agendamento:
 
 ```bash
 docker compose exec app php artisan schedule:list

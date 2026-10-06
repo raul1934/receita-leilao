@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Jobs\ImportarEdital;
 use App\Models\Edital;
+use App\Support\ExecucaoDiaria;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class ComandosTest extends TestCase
@@ -141,13 +143,48 @@ class ComandosTest extends TestCase
         Queue::assertNotPushed(ImportarEdital::class, fn (ImportarEdital $job) => $job->ref->path() === '600100/3/2026');
     }
 
-    public function test_sincronizacao_diaria_esta_agendada(): void
+    #[DataProvider('tarefasDiarias')]
+    public function test_tarefa_diaria_roda_uma_vez_por_dia_mesmo_com_o_computador_desligado_no_horario(string $comando, string $tarefa): void
     {
-        $eventos = collect(app(Schedule::class)->events())
-            ->filter(fn (Event $evento) => str_contains($evento->command, 'leilao:sincronizar --fila'));
-
+        $eventos = collect(app(Schedule::class)->events())->filter(fn (Event $evento) => str_contains($evento->command, $comando));
         $this->assertCount(1, $eventos);
-        $this->assertSame('0 6 * * *', $eventos->first()->expression);
+        $evento = $eventos->first();
+        $this->assertSame('*/5 * * * *', $evento->expression);
+
+        $this->travelTo('2026-10-06 05:55');
+        $this->assertFalse($evento->filtersPass($this->app), 'Antes do horário.');
+
+        // Computador ligado só ao meio-dia: roda assim que o agendador volta.
+        $this->travelTo('2026-10-06 12:05');
+        $this->assertTrue($evento->filtersPass($this->app));
+
+        ExecucaoDiaria::registrar($tarefa);
+        $this->travelTo('2026-10-06 18:00');
+        $this->assertFalse($evento->filtersPass($this->app), 'Já rodou hoje.');
+
+        $this->travelTo('2026-10-07 06:00');
+        $this->assertTrue($evento->filtersPass($this->app), 'Dia seguinte.');
+    }
+
+    public static function tarefasDiarias(): array
+    {
+        return [
+            'sincronização' => ['leilao:sincronizar --fila', 'leilao:sincronizar'],
+            'resultados' => ['leilao:resultados', 'leilao:resultados'],
+        ];
+    }
+
+    public function test_sincronizacao_manual_completa_conta_como_a_do_dia(): void
+    {
+        $this->travelTo('2026-10-06 12:00');
+        $this->fakeSle();
+        Queue::fake();
+
+        $this->artisan('leilao:sincronizar', ['--fila' => true, '--situacao' => ['2']])->assertSuccessful();
+        $this->assertTrue(ExecucaoDiaria::pendente('leilao:sincronizar'), 'Sincronização filtrada não conta.');
+
+        $this->artisan('leilao:sincronizar', ['--fila' => true])->assertSuccessful();
+        $this->assertFalse(ExecucaoDiaria::pendente('leilao:sincronizar'));
     }
 
     private function editalFinalizado(int $situacao, bool $detalhado): Edital

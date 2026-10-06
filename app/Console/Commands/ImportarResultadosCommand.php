@@ -8,6 +8,7 @@ use App\Models\Lote;
 use App\Services\Sle\EditalImporter;
 use App\Services\Sle\EditalRef;
 use App\Services\Sle\SleException;
+use App\Support\ExecucaoDiaria;
 use App\Support\Formato;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -64,6 +65,11 @@ class ImportarResultadosCommand extends Command
             $resumo = $edital->resumoArremate();
             $this->line(sprintf('%s: %d de %d lote(s) arrematado(s), total %s%s', $prefixo, $resumo['lotes'], $resumo['de'],
                 Formato::moeda($resumo['total']), $resumo['suspeitos'] ? " <comment>({$resumo['suspeitos']} lance(s) suspeito(s) fora do total)</comment>" : ''));
+        }
+
+        // Rodar para todos os pendentes (manual ou agendado) conta como a execução do dia.
+        if (! $this->argument('editais')) {
+            ExecucaoDiaria::registrar('leilao:resultados');
         }
 
         return $status;
